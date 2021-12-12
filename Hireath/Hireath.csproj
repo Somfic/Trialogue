@@ -35,6 +35,7 @@
       <None Update="Assets\Models\pot.obj">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
+      <None Remove="imgui.ini" />
     </ItemGroup>
 
 </Project>

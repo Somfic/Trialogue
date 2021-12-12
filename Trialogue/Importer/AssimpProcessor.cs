@@ -140,9 +140,9 @@ namespace Trialogue.Importer
                 if (hasBones)
                 {
                     var assignedBoneWeights = new Dictionary<int, int>();
-                    for (uint boneID = 0; boneID < mesh.BoneCount; boneID++)
+                    for (uint boneId = 0; boneId < mesh.BoneCount; boneId++)
                     {
-                        var bone = mesh.Bones[(int) boneID];
+                        var bone = mesh.Bones[(int) boneId];
                         var boneName = bone.Name;
                         var suffix = 1;
                         while (boneIDsByName.ContainsKey(boneName))
@@ -151,13 +151,13 @@ namespace Trialogue.Importer
                             suffix += 1;
                         }
 
-                        boneIDsByName.Add(boneName, boneID);
+                        boneIDsByName.Add(boneName, boneId);
                         foreach (var weight in bone.VertexWeights)
                         {
                             var relativeBoneIndex =
                                 GetAndIncrementRelativeBoneIndex(assignedBoneWeights, weight.VertexID);
                             builder.WriteVertexElement(weight.VertexID,
-                                boneIndicesOffset + relativeBoneIndex * sizeof(uint), boneID);
+                                boneIndicesOffset + relativeBoneIndex * sizeof(uint), boneId);
                             builder.WriteVertexElement(weight.VertexID,
                                 boneWeightOffset + relativeBoneIndex * sizeof(float), weight.Weight);
                         }
@@ -168,11 +168,11 @@ namespace Trialogue.Importer
                                     * Matrix4x4.CreateFromQuaternion(rot)
                                     * Matrix4x4.CreateTranslation(trans);
 
-                        boneOffsets[boneID] = offsetMat;
+                        boneOffsets[boneId] = offsetMat;
                     }
                 }
 
-                builder.FreeGCHandle();
+                builder.FreeGcHandle();
 
                 var indexCount = (uint) indices.Count;
 
@@ -237,11 +237,11 @@ namespace Trialogue.Importer
             };
         }
 
-        private int GetAndIncrementRelativeBoneIndex(Dictionary<int, int> assignedBoneWeights, int vertexID)
+        private int GetAndIncrementRelativeBoneIndex(Dictionary<int, int> assignedBoneWeights, int vertexId)
         {
             var currentCount = 0;
-            assignedBoneWeights.TryGetValue(vertexID, out currentCount);
-            assignedBoneWeights[vertexID] = currentCount + 1;
+            assignedBoneWeights.TryGetValue(vertexId, out currentCount);
+            assignedBoneWeights[vertexId] = currentCount + 1;
             return currentCount;
         }
 
@@ -314,7 +314,7 @@ namespace Trialogue.Importer
                 Unsafe.Copy(dst, ref data);
             }
 
-            public void FreeGCHandle()
+            public void FreeGcHandle()
             {
                 _gch.Free();
             }

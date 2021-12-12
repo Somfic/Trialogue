@@ -12,7 +12,7 @@ namespace Trialogue.Components
         internal ProcessedModel ProcessedModel;
         internal IList<ModelResources> Resources;
 
-        private long VerticesCount;
+        private long _verticesCount;
 
         public void SetModel(string path, Shading shadingMode = Shading.Flat)
         {
@@ -21,14 +21,20 @@ namespace Trialogue.Components
             using var file = File.OpenRead(fullPath);
             ProcessedModel = new AssimpProcessor().ProcessT(file, Path.GetExtension(fullPath), shadingMode);
 
-            VerticesCount = ProcessedModel.MeshParts.Sum(x => x.VertexElements.Length);
+            _verticesCount = ProcessedModel.MeshParts.Sum(x => x.VertexElements.Length);
         }
 
         public void DrawUi(ref EcsEntity ecsEntity)
         {
+            if (ProcessedModel == null)
+            {
+                ImGui.Text("No model loaded");
+                return;
+            }
+
             foreach (var mesh in ProcessedModel.MeshParts) ImGui.Text($"{mesh.Name} ({mesh.IndexCount} vertices)");
         }
-
+        
         public void Dispose()
         {
         }

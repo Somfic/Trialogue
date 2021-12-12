@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using ImGuiNET;
 using Microsoft.Extensions.Logging;
@@ -9,22 +11,21 @@ using Trialogue.Ecs;
 using Trialogue.Window;
 using Veldrid;
 
-namespace Trialogue.Systems.Rendering
+namespace Trialogue.Systems.Rendering.Ui
 {
     public class UiRenderSystem : IEcsStartSystem, IEcsUpdateSystem, IEcsRenderSystem, IEcsDestroySystem
     {
         private readonly ILogger<UiRenderSystem> _log;
 
+        private EcsWorld _world = null;
         private EcsEntity _selectedEntity;
 
-        private string _tempText;
-        private Transform _transformTest = default;
-
         private readonly IDictionary<string, string> _typeNames;
-        private EcsWorld _world;
-        private ImFontPtr font;
 
-        private ImGuiRenderer imgUiRenderer;
+        private ImGuiRenderer _imgUiRenderer;
+
+        private IList<Type> components = new List<Type>();
+        private Type selectedComponent;
 
         public UiRenderSystem(ILogger<UiRenderSystem> log)
         {
@@ -38,14 +39,14 @@ namespace Trialogue.Systems.Rendering
 
         public void OnRender(ref Context context)
         {
-            imgUiRenderer.Render(context.Window.GraphicsDevice, context.Window.CommandList);
+            _imgUiRenderer.Render(context.Window.GraphicsDevice, context.Window.CommandList);
         }
 
         public void OnStart(ref Context context)
         {
             var graphicsDevice = context.Window.GraphicsDevice;
 
-            imgUiRenderer = new ImGuiRenderer(graphicsDevice,
+            _imgUiRenderer = new ImGuiRenderer(graphicsDevice,
                 graphicsDevice.MainSwapchain.Framebuffer.OutputDescription, context.Window.Size.Width,
                 context.Window.Size.Height);
 
@@ -56,13 +57,22 @@ namespace Trialogue.Systems.Rendering
 
             var style = ImGui.GetStyle();
 
-            imgUiRenderer.RecreateFontDeviceTexture();
+            _imgUiRenderer.RecreateFontDeviceTexture();
+
+            // Add all component types to the list
+            foreach (var type in Assembly.GetExecutingAssembly().GetTypes())
+            {
+                if (type.IsAssignableTo(typeof(IEcsComponent)) && !type.IsAbstract)
+                {
+                    components.Add(type);
+                }
+            }
         }
 
         public void OnUpdate(ref Context context)
         {
-            imgUiRenderer.WindowResized(context.Window.Native.Width, context.Window.Native.Height);
-            imgUiRenderer.Update(1f / 60f, context.Input);
+            _imgUiRenderer.WindowResized(context.Window.Native.Width, context.Window.Native.Height);
+            _imgUiRenderer.Update(1f / 60f, context.Input);
 
             BuildEntities(ref context);
             BuildEntity(ref context);
@@ -85,6 +95,8 @@ namespace Trialogue.Systems.Rendering
             {
                 foreach (var component in _selectedEntity.Components)
                 {
+                    ImGui.PushID(component.GetType().FullName);
+                    
                     var type = component.GetType().Name;
                     var name = "";
                     if (_typeNames.ContainsKey(type))
@@ -96,15 +108,68 @@ namespace Trialogue.Systems.Rendering
                         name = Regex.Replace(type, @"((?<=\p{Ll})\p{Lu})|((?!\A)\p{Lu}(?>\p{Ll}))", " $0");
                         _typeNames.Add(type, name);
                     }
+                    
+                    ImGui.AlignTextToFramePadding();
+                    bool header = ImGui.CollapsingHeader(name, ImGuiTreeNodeFlags.DefaultOpen | ImGuiTreeNodeFlags.AllowItemOverlap);
 
-                    ImGui.Text(name);
-                    component.DrawUi(ref _selectedEntity);
+                    if (name != "Component Info")
+                    {
+
+                        ImGui.SameLine(ImGui.GetWindowWidth() - 28);
+                        if (ImGui.Button("X"))
+                        {
+                            var deleteMethod = _selectedEntity.GetType().GetMethod("Del");
+#if DEBUG
+                            if (deleteMethod == null)
+                            {
+                                throw new Exception("Could not find Del method");
+                            }
+#endif
+                            var deleteGenericMethod = deleteMethod.MakeGenericMethod(component.GetType());
+
+                            _log.LogInformation("Deleting {Component} from {Entity}", component.GetType().Name, _selectedEntity.Get<ComponentInfo>().EntityName);
+
+                            deleteGenericMethod.Invoke(_selectedEntity, Array.Empty<object>());
+                        }
+                    }
+                    
+                    if (header)
+                    {
+                        ImGui.BeginGroup();
+                        component.DrawUi(ref _selectedEntity);
+                        ImGui.EndGroup();
+                    }
+
+                    ImGui.PopID();
                 }
 
-                ImGui.Spacing();
-                if (ImGui.Button("Add component"))
+                ImGui.SetNextItemWidth(240);
+                if (ImGui.BeginCombo("", "Add a component"))
                 {
+                    foreach (var component in components)
+                    {
+                        if (!_selectedEntity.Components.Select(x => x.GetType().FullName).Contains(component.FullName))
+                        {
+                            if (ImGui.Selectable(component.Name))
+                            {
+                                var addMethod = _selectedEntity.GetType().GetMethod("Get");
+#if DEBUG
+                                if (addMethod == null)
+                                {
+                                    throw new Exception("Could not find Get method");
+                                }                          
+#endif
+                                var addGenericMethod = addMethod.MakeGenericMethod(component);
+                                
+                                _log.LogInformation("Adding {Component} to {Entity}",  component.Name, _selectedEntity.Get<ComponentInfo>().EntityName);
+                                
+                                addGenericMethod.Invoke(_selectedEntity, Array.Empty<object>());
+                            }
+                        }
+                    }
                 }
+
+                ImGui.EndCombo();
             }
 
             ImGui.End();
@@ -132,15 +197,13 @@ namespace Trialogue.Systems.Rendering
             var entities = Array.Empty<EcsEntity>();
             _world.GetAllEntities(ref entities);
 
-            for (var index = 0; index < entities.Length; index++)
+            foreach (var entity in entities)
             {
-                var entity = entities[index];
                 if (ImGui.TreeNode(entity.Id.ToString(), entity.Get<ComponentInfo>().EntityName)) ImGui.TreePop();
 
                 if (ImGui.IsItemClicked())
                 {
                     _selectedEntity = entity;
-                    _tempText = entity.Get<ComponentInfo>().EntityName;
                 }
             }
 

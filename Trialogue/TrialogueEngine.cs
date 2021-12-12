@@ -88,9 +88,9 @@ namespace Trialogue
             // Get the window implementation
             var window = _host.Services.GetRequiredService<Window.Window>();
 
-            window._world = new EcsWorld();
-            window._systems = new EcsSystems(window._world);
-            window._serviceProvider = _host.Services;
+            window.World = new EcsWorld();
+            window.Systems = new EcsSystems(window.World);
+            window.ServiceProvider = _host.Services;
             window.GraphicsDevice = graphicsDevice;
             window.ResourceFactory = graphicsDevice.ResourceFactory;
 
@@ -111,8 +111,8 @@ namespace Trialogue
                     (uint) nativeWindow.Height);
             };
 
-            window._systems.OnStart(ref context);
-            window._hasInitialised = true;
+            window.Systems.OnStart(ref context);
+            window.HasInitialised = true;
 
             var stopwatch = Stopwatch.StartNew();
             float lastTime = 0;
@@ -127,7 +127,7 @@ namespace Trialogue
                 lastTime = context.Time.Total;
 
                 window.OnUpdate(ref context);
-                window._systems.OnUpdate(ref context);
+                window.Systems.OnUpdate(ref context);
 
                 commandList.Begin();
                 commandList.SetFramebuffer(graphicsDevice.MainSwapchain.Framebuffer);
@@ -135,7 +135,7 @@ namespace Trialogue
                 commandList.ClearDepthStencil(1f);
 
                 window.OnRender(ref context);
-                window._systems.OnRender(ref context);
+                window.Systems.OnRender(ref context);
 
                 commandList.End();
                 graphicsDevice.SubmitCommands(commandList);
@@ -155,8 +155,8 @@ namespace Trialogue
             graphicsDevice.Dispose();
 
             window.OnDestroy(ref context);
-            window._systems.OnDestroy(ref context);
-            window._world.Destroy();
+            window.Systems.OnDestroy(ref context);
+            window.World.Destroy();
         }
     }
 }

@@ -4,40 +4,43 @@ using Trialogue.Components;
 using Trialogue.Ecs;
 using Trialogue.Window;
 
-public class CameraSystem : IEcsUpdateSystem
+namespace Trialogue.Systems
 {
-    private readonly ILogger<CameraSystem> _log;
-
-    private EcsFilter<Camera, Transform> _filter;
-    private readonly float bottomMaxRot = 90;
-
-    private readonly float mouseSensitivity = 0.1f;
-    private readonly float topMaxRot = 0;
-
-    private float xRotation;
-
-    public CameraSystem(ILogger<CameraSystem> log)
+    public class CameraSystem : IEcsUpdateSystem
     {
-        _log = log;
-    }
+        private readonly ILogger<CameraSystem> _log;
 
-    public void OnUpdate(ref Context context)
-    {
-        foreach (var i in _filter)
+        private EcsFilter<Camera, Transform> _filter;
+        private readonly float _bottomMaxRot = 90;
+
+        private readonly float _mouseSensitivity = 0.1f;
+        private readonly float _topMaxRot = 0;
+
+        private float _xRotation;
+
+        public CameraSystem(ILogger<CameraSystem> log)
         {
-            ref var camera = ref _filter.Get1(i);
-            ref var transform = ref _filter.Get2(i);
+            _log = log;
+        }
 
-            // get mouse axis
-            var mouseX = context.Input.MousePosition.X * mouseSensitivity;
-            var mouseY = context.Input.MousePosition.Y * mouseSensitivity;
+        public void OnUpdate(ref Context context)
+        {
+            foreach (var i in _filter)
+            {
+                ref var camera = ref _filter.Get1(i);
+                ref var transform = ref _filter.Get2(i);
 
-            // clamp cam rotation
-            xRotation -= mouseY;
-            xRotation = Math.Clamp(xRotation, topMaxRot, bottomMaxRot);
+                // get mouse axis
+                var mouseX = context.Input.MousePosition.X * _mouseSensitivity;
+                var mouseY = context.Input.MousePosition.Y * _mouseSensitivity;
 
-            // rotate camera around x axis
-            //transform.Rotation = Quaternion.CreateFromYawPitchRoll(mouseX / 10f, mouseY / 10f, 0f);
+                // clamp cam rotation
+                _xRotation -= mouseY;
+                _xRotation = Math.Clamp(_xRotation, _topMaxRot, _bottomMaxRot);
+
+                // rotate camera around x axis
+                //transform.Rotation = Quaternion.CreateFromYawPitchRoll(mouseX / 10f, mouseY / 10f, 0f);
+            }
         }
     }
 }

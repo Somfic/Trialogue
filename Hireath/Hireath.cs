@@ -6,6 +6,7 @@ using Trialogue;
 using Trialogue.Components;
 using Trialogue.Ecs;
 using Trialogue.Systems.Rendering;
+using Trialogue.Systems.Rendering.Ui;
 using Trialogue.Window;
 
 namespace Hireath
@@ -14,8 +15,8 @@ namespace Hireath
     {
         private readonly ILogger<Hireath> _log;
 
-        private EcsEntity camera;
-        private EcsEntity cube;
+        private EcsEntity _camera;
+        private EcsEntity _cube;
 
         public Hireath(ILogger<Hireath> log)
         {
@@ -28,9 +29,9 @@ namespace Hireath
             AddSystem<UiRenderSystem>();
             //AddSystem<CameraSystem>();
 
-            camera = CreateEntity("Camera");
-            ref var cameraCamera = ref camera.Get<Camera>();
-            ref var cameraTransform = ref camera.Get<Transform>();
+            _camera = CreateEntity("Camera");
+            ref var cameraCamera = ref _camera.Get<Camera>();
+            ref var cameraTransform = ref _camera.Get<Transform>();
 
             cameraCamera.IsOrthographic = false;
             cameraCamera.NearPlane = 0.001f;
@@ -40,11 +41,11 @@ namespace Hireath
 
             cameraTransform.Position = new Vector3(0, 0, 10);
 
-            cube = CreateEntity("Square");
-            ref var model = ref cube.Get<Model>();
-            ref var material = ref cube.Get<Material>();
-            ref var renderer = ref cube.Get<Renderer>();
-            ref var transform = ref cube.Get<Transform>();
+            _cube = CreateEntity("Square");
+            ref var model = ref _cube.Get<Model>();
+            ref var material = ref _cube.Get<Material>();
+            ref var renderer = ref _cube.Get<Renderer>();
+            ref var transform = ref _cube.Get<Transform>();
 
             model.SetModel("Models/keyboard.obj");
 
@@ -57,7 +58,7 @@ namespace Hireath
 
         public override void OnUpdate(ref Context context)
         {
-            cube.Get<Transform>().Rotation = new Vector3(context.Time.Total * MathF.PI * 10 % 360f);
+            _cube.Get<Transform>().Rotation = new Vector3(context.Time.Total * MathF.PI * 10 % 360f);
         }
     }
 

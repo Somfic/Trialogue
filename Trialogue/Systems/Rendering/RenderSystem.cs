@@ -79,7 +79,7 @@ namespace Trialogue.Systems.Rendering
                         ResourceKind.UniformBuffer, ShaderStages.Vertex)));
 
                 // Model
-                model.Resources = model.ProcessedModel.MeshParts.Select(x => x.CreateDeviceResources(graphicsDevice, resourceFactory));
+                model.Resources = model.ProcessedModel.MeshParts.Select(x => x.CreateDeviceResources(graphicsDevice, resourceFactory)).ToList();
 
                 // Shaders
                 var vertex = material.ShaderDescriptions.First(x => x.Stage == ShaderStages.Vertex);
@@ -150,7 +150,7 @@ namespace Trialogue.Systems.Rendering
                 ref var material = ref _filter.Get2(i);
                 ref var transform = ref _filter.Get3(i);
                 ref var renderer = ref _filter.Get4(i);
-
+                
                 var worldMatrix = transform.CalculateWorldMatrix(ref context);
                 
                 commandList.UpdateBuffer(camera.ProjectionBuffer, 0, ref projectionMatrix);
@@ -159,12 +159,12 @@ namespace Trialogue.Systems.Rendering
                 commandList.UpdateBuffer(transform.WorldBuffer, 0, ref worldMatrix);
                 
                 commandList.SetPipeline(renderer.PipeLine);
-
+                
                 foreach (var modelResource in model.Resources)
                 {
                     commandList.SetVertexBuffer(0, modelResource.VertexBuffer);
                     commandList.SetIndexBuffer(modelResource.IndexBuffer, modelResource.IndexFormat);
-                    
+
                     commandList.SetGraphicsResourceSet(0, camera.ResourceSet);
                     commandList.SetGraphicsResourceSet(1, transform.WorldSet);
 

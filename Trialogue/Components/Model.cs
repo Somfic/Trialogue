@@ -10,7 +10,7 @@ namespace Trialogue.Components
     public struct Model : IEcsComponent
     {
         internal ProcessedModel ProcessedModel;
-        internal IEnumerable<ModelResources> Resources;
+        internal IList<ModelResources> Resources;
 
         private long VerticesCount;
 

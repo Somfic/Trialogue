@@ -6,7 +6,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Net.Http.Json;
 using System.Runtime.CompilerServices;
+using Newtonsoft.Json;
 
 // ReSharper disable InconsistentNaming
 // ReSharper disable ClassNeverInstantiated.Global
@@ -326,7 +328,8 @@ namespace Trialogue.Ecs {
     [UnityEngine.Scripting.Preserve]
 #endif
     public class EcsFilter<Inc1> : EcsFilter, IEcsComponentPoolResizeListener
-        where Inc1 : struct {
+        where Inc1 : struct, IEcsComponent
+    {
         int[] _get1;
 
         readonly bool _allow1;
@@ -386,7 +389,7 @@ namespace Trialogue.Ecs {
 #if UNITY_2019_1_OR_NEWER
         [UnityEngine.Scripting.Preserve]
 #endif
-        protected EcsFilter (EcsWorld world) : base (world) {
+        public EcsFilter(EcsWorld world) : base (world) {
             _allow1 = !EcsComponentType<Inc1>.IsIgnoreInFilter;
             _pool1 = world.GetPool<Inc1> ();
             _pool1.AddResizeListener (this);
@@ -506,8 +509,9 @@ namespace Trialogue.Ecs {
     [UnityEngine.Scripting.Preserve]
 #endif
     public class EcsFilter<Inc1, Inc2> : EcsFilter, IEcsComponentPoolResizeListener
-        where Inc1 : struct
-        where Inc2 : struct {
+        where Inc1 : struct, IEcsComponent
+        where Inc2 : struct, IEcsComponent
+    {
         int[] _get1;
         int[] _get2;
 
@@ -541,7 +545,7 @@ namespace Trialogue.Ecs {
 #if UNITY_2019_1_OR_NEWER
         [UnityEngine.Scripting.Preserve]
 #endif
-        protected EcsFilter (EcsWorld world) : base (world) {
+        public EcsFilter (EcsWorld world) : base (world) {
             _allow1 = !EcsComponentType<Inc1>.IsIgnoreInFilter;
             _allow2 = !EcsComponentType<Inc2>.IsIgnoreInFilter;
             _pool1 = world.GetPool<Inc1> ();
@@ -679,9 +683,10 @@ namespace Trialogue.Ecs {
     [UnityEngine.Scripting.Preserve]
 #endif
     public class EcsFilter<Inc1, Inc2, Inc3> : EcsFilter, IEcsComponentPoolResizeListener
-        where Inc1 : struct
-        where Inc2 : struct
-        where Inc3 : struct {
+        where Inc1 : struct, IEcsComponent
+        where Inc2 : struct, IEcsComponent
+        where Inc3 : struct, IEcsComponent
+    {
         int[] _get1;
         int[] _get2;
         int[] _get3;
@@ -729,7 +734,7 @@ namespace Trialogue.Ecs {
 #if UNITY_2019_1_OR_NEWER
         [UnityEngine.Scripting.Preserve]
 #endif
-        protected EcsFilter (EcsWorld world) : base (world) {
+        public EcsFilter (EcsWorld world) : base (world) {
             _allow1 = !EcsComponentType<Inc1>.IsIgnoreInFilter;
             _allow2 = !EcsComponentType<Inc2>.IsIgnoreInFilter;
             _allow3 = !EcsComponentType<Inc3>.IsIgnoreInFilter;
@@ -885,10 +890,11 @@ namespace Trialogue.Ecs {
     [UnityEngine.Scripting.Preserve]
 #endif
     public class EcsFilter<Inc1, Inc2, Inc3, Inc4> : EcsFilter, IEcsComponentPoolResizeListener
-        where Inc1 : struct
-        where Inc2 : struct
-        where Inc3 : struct
-        where Inc4 : struct {
+        where Inc1 : struct, IEcsComponent
+        where Inc2 : struct, IEcsComponent
+        where Inc3 : struct, IEcsComponent
+        where Inc4 : struct, IEcsComponent
+    {
         int[] _get1;
         int[] _get2;
         int[] _get3;
@@ -950,7 +956,7 @@ namespace Trialogue.Ecs {
 #if UNITY_2019_1_OR_NEWER
         [UnityEngine.Scripting.Preserve]
 #endif
-        protected EcsFilter (EcsWorld world) : base (world) {
+        public EcsFilter (EcsWorld world) : base (world) {
             _allow1 = !EcsComponentType<Inc1>.IsIgnoreInFilter;
             _allow2 = !EcsComponentType<Inc2>.IsIgnoreInFilter;
             _allow3 = !EcsComponentType<Inc3>.IsIgnoreInFilter;
@@ -1124,11 +1130,12 @@ namespace Trialogue.Ecs {
     [UnityEngine.Scripting.Preserve]
 #endif
     public class EcsFilter<Inc1, Inc2, Inc3, Inc4, Inc5> : EcsFilter, IEcsComponentPoolResizeListener
-        where Inc1 : struct
-        where Inc2 : struct
-        where Inc3 : struct
-        where Inc4 : struct
-        where Inc5 : struct {
+        where Inc1 : struct, IEcsComponent
+        where Inc2 : struct, IEcsComponent
+        where Inc3 : struct, IEcsComponent
+        where Inc4 : struct, IEcsComponent
+        where Inc5 : struct, IEcsComponent
+    {
         int[] _get1;
         int[] _get2;
         int[] _get3;
@@ -1396,12 +1403,13 @@ namespace Trialogue.Ecs {
     [UnityEngine.Scripting.Preserve]
 #endif
     public class EcsFilter<Inc1, Inc2, Inc3, Inc4, Inc5, Inc6> : EcsFilter, IEcsComponentPoolResizeListener
-        where Inc1 : struct
-        where Inc2 : struct
-        where Inc3 : struct
-        where Inc4 : struct
-        where Inc5 : struct
-        where Inc6 : struct {
+        where Inc1 : struct, IEcsComponent
+        where Inc2 : struct, IEcsComponent
+        where Inc3 : struct, IEcsComponent
+        where Inc4 : struct, IEcsComponent
+        where Inc5 : struct, IEcsComponent
+        where Inc6 : struct, IEcsComponent
+    {
         int[] _get1;
         int[] _get2;
         int[] _get3;

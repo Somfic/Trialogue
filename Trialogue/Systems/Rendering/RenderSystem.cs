@@ -1,108 +1,190 @@
 ﻿using System;
+using System.Linq;
+using System.Numerics;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
+using Trialogue.Common;
+using Trialogue.Components;
 using Trialogue.Ecs;
-using Trialogue.Glfw;
-using Trialogue.OpenGl;
+using Veldrid;
+using Veldrid.SPIRV;
+using Context = Trialogue.Window.Context;
 using Exception = System.Exception;
 
 namespace Trialogue.Systems.Rendering
 {
-    public class RenderSystem : IEcsInitialiseSystem, IEcsUpdateSystem
+    public class RenderSystem : IEcsInitialiseSystem, IEcsRenderSystem, IEcsDestroySystem
     {
         private readonly ILogger<RenderSystem> _log;
-        private EcsFilter<MeshComponent, MaterialComponent> _filter;
 
+        private EcsWorld _world = null;
+
+        private EcsFilter<Model, Material, Transform, Renderer> _filter;
+        private EcsFilter<Camera, Transform> _cameraFilter;
+        
         public RenderSystem(ILogger<RenderSystem> log)
         {
             _log = log;
         }
 
-        public unsafe void OnInitialise()
+        public void OnInitialise(ref Context context)
         {
+            var graphicsDevice = context.Window.GraphicsDevice;
+            var resourceFactory = graphicsDevice.ResourceFactory;
+
+            if (_cameraFilter.IsEmpty())
+            {
+                throw new Exception("No camera entity found");
+            }
+
+            ref var cameraEntity = ref _cameraFilter.GetEntity(0);
+            ref var camera = ref cameraEntity.Get<Camera>();
+            ref var cameraTransform = ref cameraEntity.Get<Camera>();
+
+            // Camera
+            camera.ProjectionBuffer =
+                resourceFactory.CreateBuffer(new BufferDescription(64, BufferUsage.UniformBuffer));
+            camera.ViewBuffer = resourceFactory.CreateBuffer(new BufferDescription(64, BufferUsage.UniformBuffer));
+
+            camera.PositionBuffer = resourceFactory.CreateBuffer(new BufferDescription(64, BufferUsage.UniformBuffer));
+          
+            
+            var cameraSetLayout = resourceFactory.CreateResourceLayout(
+                new ResourceLayoutDescription(
+                    new ResourceLayoutElementDescription("ProjectionBuffer", ResourceKind.UniformBuffer,
+                        ShaderStages.Vertex),
+                    new ResourceLayoutElementDescription("ViewBuffer", ResourceKind.UniformBuffer,
+                        ShaderStages.Vertex),
+                   new ResourceLayoutElementDescription("PositionBuffer",
+                        ResourceKind.UniformBuffer, ShaderStages.Vertex)));
+            
+            // Global
+            var sharedVertexLayout = new VertexLayoutDescription(
+                new VertexElementDescription("Position", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float3),
+                new VertexElementDescription("Normal", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float3),
+                new VertexElementDescription("TexCoord", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float2));
+
             foreach (var i in _filter)
             {
-                ref var mesh = ref _filter.Get1(i);
-                mesh.Vao = GL.GenVertexArray();
-                mesh.Vbo = GL.GenBuffer();
-                
-                GL.BindVertexArray(mesh.Vao);
-                
-                GL.BindBuffer(GL.ARRAY_BUFFER, mesh.Vbo);
-                fixed (float* v = &mesh.Vertices[0])
-                {
-                    GL.BufferData(GL.ARRAY_BUFFER, sizeof(float) * mesh.Vertices.Length, v, GL.STATIC_DRAW);
-                }
-                
-                GL.VertexAttribPointer(0, 2, GL.FLOAT, false, sizeof(float) * 5, (void*) 0);
-                GL.EnableVertexAttribArray(0);
-                
-                GL.VertexAttribPointer(1, 3, GL.FLOAT, false, sizeof(float) * 5, (void*)(sizeof(float) * 2));
-                GL.EnableVertexAttribArray(1);
-
-                GL.BindBuffer(GL.ARRAY_BUFFER, 0);
-                GL.BindVertexArray(0);
-
+                ref var model = ref _filter.Get1(i);
                 ref var material = ref _filter.Get2(i);
-                
-          
-                material.ShaderProgram = GL.CreateProgram();
-                
-                for (var index = 0; index < material.Shaders.Length; index++)
-                {
-                    ref var shader = ref material.Shaders[index];
-                    
-                    shader.Id = GL.CreateShader((int) shader.Type);
-                    GL.ShaderSource(shader.Id, shader.Glsl);
-                    GL.CompileShader(shader.Id);
-                    
-                    var compileStatus = GL.GetShaderiv(shader.Id, GL.COMPILE_STATUS, 1);
+                ref var transform = ref _filter.Get3(i);
+                ref var renderer = ref _filter.Get4(i);
 
-                    if (compileStatus[0] == 0)
+                // Transform
+                transform.WorldBuffer =
+                    resourceFactory.CreateBuffer(new BufferDescription(64, BufferUsage.UniformBuffer));
+                var worldLayout = resourceFactory.CreateResourceLayout(
+                    new ResourceLayoutDescription(new ResourceLayoutElementDescription("WorldBuffer",
+                        ResourceKind.UniformBuffer, ShaderStages.Vertex)));
+
+                // Model
+                model.Resources = model.ProcessedModel.MeshParts.Select(x => x.CreateDeviceResources(graphicsDevice, resourceFactory));
+
+                // Shaders
+                var vertex = material.ShaderDescriptions.First(x => x.Stage == ShaderStages.Vertex);
+                var fragment = material.ShaderDescriptions.First(x => x.Stage == ShaderStages.Fragment);
+                material.Shaders = resourceFactory.CreateFromSpirv(vertex, fragment);
+
+                // Renderer
+                var pipelineDescription = new GraphicsPipelineDescription
+                {
+                    BlendState = BlendStateDescription.SingleOverrideBlend,
+                    PrimitiveTopology = PrimitiveTopology.TriangleList,
+                    ResourceLayouts = new[] { cameraSetLayout, worldLayout },
+
+                    DepthStencilState = new DepthStencilStateDescription()
                     {
-                        // Failed to compile shader
-                        var error = GL.GetShaderInfoLog(shader.Id);
-                        throw new Exception(error);
-                    }
+                        DepthTestEnabled = true,
+                        DepthWriteEnabled = true,
+                        DepthComparison = ComparisonKind.LessEqual,
+                        StencilTestEnabled = true
+                    },
 
-                    GL.AttachShader(material.ShaderProgram, shader.Id);
-                }
+                    RasterizerState = new RasterizerStateDescription()
+                    {
+                        CullMode = FaceCullMode.Front,
+                        FillMode = PolygonFillMode.Solid,
+                        FrontFace = FrontFace.CounterClockwise,
+                        DepthClipEnabled = true,
+                        ScissorTestEnabled = true
+                    },
+                    ShaderSet = new ShaderSetDescription(new[] {sharedVertexLayout }, material.Shaders),
+                    Outputs = graphicsDevice.SwapchainFramebuffer.OutputDescription
+                };
+
+                renderer.PipeLine = resourceFactory.CreateGraphicsPipeline(pipelineDescription);
+
+                transform.WorldSet = resourceFactory.CreateResourceSet(new ResourceSetDescription(
+                    worldLayout, transform.WorldBuffer));
+
+                camera.ResourceSet = resourceFactory.CreateResourceSet(new ResourceSetDescription(
+                    cameraSetLayout, 
+                    camera.ProjectionBuffer, 
+                    camera.ViewBuffer, 
+                    camera.PositionBuffer));
+            }
+        }
+
+        public void OnRender(ref Context context)
+        {
+            if (_cameraFilter.IsEmpty())
+            {
+                throw new Exception("No camera entity found");
+            }
+
+            ref var cameraEntity = ref _cameraFilter.GetEntity(0);
+            ref var camera = ref cameraEntity.Get<Camera>();
+            ref var cameraTransform = ref cameraEntity.Get<Transform>();
+
+            var projectionMatrix = camera.CalculateProjectionMatrix(ref context);
+            var viewMatrix = camera.CalculateViewMatrix(ref cameraTransform);
+            
+            var graphicsDevice = context.Window.GraphicsDevice;
+            var resourceFactory = graphicsDevice.ResourceFactory;
+            var commandList = context.Window.CommandList;
+
+            foreach (var i in _filter)
+            {
+                ref var model = ref _filter.Get1(i);
+                ref var material = ref _filter.Get2(i);
+                ref var transform = ref _filter.Get3(i);
+                ref var renderer = ref _filter.Get4(i);
+
+                var worldMatrix = transform.CalculateWorldMatrix(ref context);
                 
-                GL.LinkProgram(material.ShaderProgram);
-                var status = GL.GetProgramiv(material.ShaderProgram, GL.LINK_STATUS, 1);
-                if (status[0] == 0)
-                {
-                    // Failed to compile program
-                    var error = GL.GetProgramInfoLog(material.ShaderProgram);
-                    throw new Exception(error);
-                }
+                commandList.UpdateBuffer(camera.ProjectionBuffer, 0, ref projectionMatrix);
+                commandList.UpdateBuffer(camera.ViewBuffer, 0, ref viewMatrix);
+                commandList.UpdateBuffer(camera.PositionBuffer, 0, ref cameraTransform.Position);
+                commandList.UpdateBuffer(transform.WorldBuffer, 0, ref worldMatrix);
+                
+                commandList.SetPipeline(renderer.PipeLine);
 
-                for (var index = 0; index < material.Shaders.Length; index++)
+                foreach (var modelResource in model.Resources)
                 {
-                    ref var shader = ref material.Shaders[index];
+                    commandList.SetVertexBuffer(0, modelResource.VertexBuffer);
+                    commandList.SetIndexBuffer(modelResource.IndexBuffer, modelResource.IndexFormat);
                     
-                    GL.DetachShader(material.ShaderProgram, shader.Id);
-                    GL.DeleteShader(shader.Id);
+                    commandList.SetGraphicsResourceSet(0, camera.ResourceSet);
+                    commandList.SetGraphicsResourceSet(1, transform.WorldSet);
+
+                    commandList.DrawIndexed(modelResource.IndexCount, 1, 0, 0, 0);
                 }
             }
         }
-        
-        public void OnUpdate()
+
+        public void OnDestroy(ref Context context)
         {
-            GL.ClearColor(0, 0, 1, 0);
-            GL.Clear(GL.COLOR_BUFFER_BIT | GL.DEPTH_BUFFER_BIT);
-            GL.Enable(GL.DEPTH_TEST);
-            
             foreach (var i in _filter)
             {
                 ref var mesh = ref _filter.Get1(i);
                 ref var material = ref _filter.Get2(i);
+                ref var renderer = ref _filter.Get3(i);
 
-                GL.UseProgram(material.ShaderProgram);
-
-                GL.BindVertexArray(mesh.Vao);
-                GL.DrawArrays(GL.TRIANGLES, 0, 6);
-                GL.BindVertexArray(0);
-            } 
+                mesh.Dispose();
+                material.Dispose();
+                renderer.Dispose();
+            }
         }
     }
 }

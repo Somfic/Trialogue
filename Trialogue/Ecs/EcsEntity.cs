@@ -6,6 +6,7 @@
 
 using System;
 using System.Runtime.CompilerServices;
+using Trialogue.Components;
 
 namespace Trialogue.Ecs {
     /// <summary>
@@ -17,9 +18,9 @@ namespace Trialogue.Ecs {
         internal EcsWorld Owner;
 #if DEBUG
         // For using in IDE debugger.
-        internal object[] Components {
+        internal IEcsComponent[] Components {
             get {
-                object[] list = null;
+                IEcsComponent[] list = null;
                 if (this.IsAlive ()) {
                     this.GetComponentValues (ref list);
                 }
@@ -91,7 +92,8 @@ namespace Trialogue.Ecs {
         [Unity.IL2CPP.CompilerServices.Il2CppSetOption (Unity.IL2CPP.CompilerServices.Option.ArrayBoundsChecks, false)]
 #endif
         [MethodImpl (MethodImplOptions.AggressiveInlining)]
-        public static EcsEntity Replace<T> (in this EcsEntity entity, in T item) where T : struct {
+        public static EcsEntity Update<T> (in this EcsEntity entity, in T item) where T : struct, IEcsComponent
+        {
             ref var entityData = ref entity.Owner.GetEntityData (entity);
 #if DEBUG
             if (entityData.Gen != entity.Gen) { throw new Exception ("Cant add component to destroyed entity."); }
@@ -133,7 +135,8 @@ namespace Trialogue.Ecs {
         [Unity.IL2CPP.CompilerServices.Il2CppSetOption (Unity.IL2CPP.CompilerServices.Option.ArrayBoundsChecks, false)]
 #endif
         [MethodImpl (MethodImplOptions.AggressiveInlining)]
-        public static ref T Get<T> (in this EcsEntity entity) where T : struct {
+        public static ref T Get<T> (in this EcsEntity entity) where T : struct, IEcsComponent
+        {
             ref var entityData = ref entity.Owner.GetEntityData (entity);
 #if DEBUG
             if (entityData.Gen != entity.Gen) { throw new Exception ("Cant add component to destroyed entity."); }
@@ -253,7 +256,7 @@ namespace Trialogue.Ecs {
 #if DEBUG
             if (srcData.Gen != entity.Gen) { throw new Exception ("Cant copy destroyed entity."); }
 #endif
-            var dstEntity = owner.NewEntity ();
+            var dstEntity = owner.NewEntity(entity.Get<ComponentInfo>().EntityName);
             ref var dstData = ref owner.GetEntityData (dstEntity);
             if (dstData.Components.Length < srcData.ComponentsCountX2) {
                 dstData.Components = new int[srcData.Components.Length];
@@ -406,7 +409,8 @@ namespace Trialogue.Ecs {
         /// <param name="entity">Entity.</param>
         /// <typeparam name="T">Component type.</typeparam>
         [MethodImpl (MethodImplOptions.AggressiveInlining)]
-        public static EcsComponentRef<T> Ref<T> (in this EcsEntity entity) where T : struct {
+        public static EcsComponentRef<T> Ref<T> (in this EcsEntity entity) where T : struct, IEcsComponent
+        {
             ref var entityData = ref entity.Owner.GetEntityData (entity);
 #if DEBUG
             if (entityData.Gen != entity.Gen) { throw new Exception ("Cant wrap component on destroyed entity."); }
@@ -435,7 +439,7 @@ namespace Trialogue.Ecs {
         public static void Destroy (in this EcsEntity entity) {
             ref var entityData = ref entity.Owner.GetEntityData (entity);
             // save copy to local var for protect from cleanup fields outside.
-            EcsEntity savedEntity;
+            EcsEntity savedEntity = default;
             savedEntity.Id = entity.Id;
             savedEntity.Gen = entity.Gen;
             savedEntity.Owner = entity.Owner;
@@ -539,14 +543,14 @@ namespace Trialogue.Ecs {
         /// <param name="entity">Entity.</param>
         /// <param name="list">List to put results in it. if null - will be created. If not enough space - will be resized.</param>
         /// <returns>Amount of components in list.</returns>
-        public static int GetComponentValues (in this EcsEntity entity, ref object[] list) {
+        public static int GetComponentValues (in this EcsEntity entity, ref IEcsComponent[] list) {
             ref var entityData = ref entity.Owner.GetEntityData (entity);
 #if DEBUG
             if (entityData.Gen != entity.Gen) { throw new Exception ("Cant touch destroyed entity."); }
 #endif
             var itemsCount = entityData.ComponentsCountX2 >> 1;
             if (list == null || list.Length < itemsCount) {
-                list = new object[itemsCount];
+                list = new IEcsComponent[itemsCount];
             }
             for (int i = 0, j = 0, iMax = entityData.ComponentsCountX2; i < iMax; i += 2, j++) {
                 list[j] = entity.Owner.ComponentPools[entityData.Components[i]].GetItem (entityData.Components[i + 1]);

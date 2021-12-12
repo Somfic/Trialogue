@@ -19,37 +19,44 @@ namespace Trialogue.Ecs {
     /// Interface for PreInit systems. PreInit() will be called before Init().
     /// </summary>
     public interface IEcsInitialiseSystem : IEcsSystem {
-        void OnInitialise ();
+        void OnInitialise (ref Window.Context context);
     }
 
     /// <summary>
     /// Interface for Init systems. Init() will be called before Run().
     /// </summary>
     public interface IEcsStartSystem : IEcsSystem {
-        void OnStart ();
+        void OnStart (ref Window.Context context);
     }
 
     /// <summary>
     /// Interface for PostDestroy systems. PostDestroy() will be called after Destroy().
     /// </summary>
     public interface IEcsPostDestroySystem : IEcsSystem {
-        void OnPostDestroy ();
+        void OnPostDestroy (ref Window.Context context);
     }
 
     /// <summary>
     /// Interface for Destroy systems. Destroy() will be called last in system lifetime cycle.
     /// </summary>
     public interface IEcsDestroySystem : IEcsSystem {
-        void OnDestroy ();
+        void OnDestroy (ref Window.Context context);
     }
 
     /// <summary>
     /// Interface for Update systems.
     /// </summary>
     public interface IEcsUpdateSystem : IEcsSystem {
-        void OnUpdate ();
+        void OnUpdate (ref Window.Context context);
     }
 
+    /// <summary>
+    /// Interface for Render systems.
+    /// </summary>
+    public interface IEcsRenderSystem : IEcsSystem {
+        void OnRender (ref Window.Context context);
+    }
+    
 #if DEBUG
     /// <summary>
     /// Debug interface for systems events processing.
@@ -70,9 +77,10 @@ namespace Trialogue.Ecs {
         public readonly string Name;
         public readonly EcsWorld World;
         readonly EcsGrowList<IEcsSystem> _allSystems = new EcsGrowList<IEcsSystem> (64);
-        readonly EcsGrowList<EcsSystemsRunItem> _runSystems = new EcsGrowList<EcsSystemsRunItem> (64);
+        readonly EcsGrowList<EcsSystemsUpdateItem> _runSystems = new EcsGrowList<EcsSystemsUpdateItem> (64);
+        readonly EcsGrowList<EcsSystemsRenderItem> _renderSystems = new EcsGrowList<EcsSystemsRenderItem> (64);
         readonly Dictionary<int, int> _namedRunSystems = new Dictionary<int, int> (64);
-        int _renderSystemIndex = -1;
+        readonly Dictionary<int, int> _namedRenderSystems = new Dictionary<int, int> (64);
         readonly Dictionary<Type, object> _injections = new Dictionary<Type, object> (32);
         bool _injected;
 #if DEBUG
@@ -112,9 +120,8 @@ namespace Trialogue.Ecs {
         /// <summary>
         /// Adds new system to processing.
         /// </summary>
-        /// <param name="system">System instance.</param>
-        /// <param name="namedRunSystem">Optional name of system.</param>
-        public EcsSystems Add<TSystem>(IServiceProvider services, string namedRunSystem = null) where TSystem : IEcsSystem
+        /// <param name="namedSystem">Optional name of system.</param>
+        public EcsSystems Add<TSystem>(IServiceProvider services, string namedSystem = null) where TSystem : IEcsSystem
         {
             var system = ActivatorUtilities.CreateInstance<TSystem>(services);
             
@@ -122,40 +129,50 @@ namespace Trialogue.Ecs {
             if (system == null) { throw new Exception ("System is null."); }
             if (_initialized) { throw new Exception ("Cant add system after initialization."); }
             if (_destroyed) { throw new Exception ("Cant touch after destroy."); }
-            if (!string.IsNullOrEmpty (namedRunSystem) && !(system is IEcsUpdateSystem)) { throw new Exception ("Cant name non-IEcsRunSystem."); }
+            if (!string.IsNullOrEmpty (namedSystem) && !(system is IEcsUpdateSystem || system is IEcsRenderSystem)) { throw new Exception ("Cant name non-IEcsRunSystem or non-IEcsRenderSystem."); }
 #endif
             _allSystems.Add (system);
             if (system is IEcsUpdateSystem) {
-                if (namedRunSystem == null && system is EcsSystems ecsSystems) {
-                    namedRunSystem = ecsSystems.Name;
+                if (namedSystem == null && system is EcsSystems ecsSystems) {
+                    namedSystem = ecsSystems.Name;
                 }
-                if (namedRunSystem != null) {
+                if (namedSystem != null) {
 #if DEBUG
-                    if (_namedRunSystems.ContainsKey (namedRunSystem.GetHashCode ())) {
-                        throw new Exception ($"Cant add named system - \"{namedRunSystem}\" name already exists.");
+                    if (_namedRunSystems.ContainsKey (namedSystem.GetHashCode ())) {
+                        throw new Exception ($"Cant add named update system - \"{namedSystem}\" name already exists.");
                     }
 #endif
-                    _namedRunSystems[namedRunSystem.GetHashCode ()] = _runSystems.Count;
+                    _namedRunSystems[namedSystem.GetHashCode ()] = _runSystems.Count;
                 }
 
-                if (system.GetType().Name.Contains("Render"))
-                {
-# if DEBUG
-                    if (_renderSystemIndex != -1)
-                    {
-                        throw new Exception($"Cant add named system - \"{namedRunSystem}\", a render system is already defined");
+                _runSystems.Add (new EcsSystemsUpdateItem { Active = true, System = (IEcsUpdateSystem) system });
+            } 
+            
+            if (system is IEcsRenderSystem)
+            {
+                if (namedSystem == null && system is EcsSystems ecsSystems) {
+                    namedSystem = ecsSystems.Name;
+                }
+                if (namedSystem != null) {
+#if DEBUG
+                    if (_namedRenderSystems.ContainsKey (namedSystem.GetHashCode ())) {
+                        throw new Exception ($"Cant add named render system - \"{namedSystem}\" name already exists.");
                     }
 #endif
-                    _renderSystemIndex = _runSystems.Count;
+                    _namedRenderSystems[namedSystem.GetHashCode ()] = _renderSystems.Count;
                 }
 
-                _runSystems.Add (new EcsSystemsRunItem { Active = true, System = (IEcsUpdateSystem) system });
+                _renderSystems.Add (new EcsSystemsRenderItem() { Active = true, System = (IEcsRenderSystem) system });
             }
             return this;
         }
 
-        public int GetNamedRunSystem (string name) {
+        public int GetNamedUpdateSystem (string name) {
             return _namedRunSystems.TryGetValue (name.GetHashCode (), out var idx) ? idx : -1;
+        }
+        
+        public int GetNamedRenderSystem (string name) {
+            return _namedRenderSystems.TryGetValue (name.GetHashCode (), out var idx) ? idx : -1;
         }
         
         /// <summary>
@@ -213,39 +230,54 @@ namespace Trialogue.Ecs {
 #endif
                 if (f.FieldType.IsSubclassOf (filterType)) {
                     f.SetValue (system, world.GetFilter (f.FieldType));
-                    continue;
                 }
-                // Other injections.
-                // foreach (var pair in injections) {
-                //     if (f.FieldType.IsAssignableFrom (pair.Key)) {
-                //         f.SetValue (system, pair.Value);
-                //         break;
-                //     }
-                // }
             }
         }
 
         /// <summary>
-        /// Sets IEcsRunSystem active state.
+        /// Sets IEcsUpdateSystem active state.
         /// </summary>
         /// <param name="idx">Index of system.</param>
         /// <param name="state">New state of system.</param>
-        public void SetRunSystemState (int idx, bool state) {
+        public void SetUpdateSystemState (int idx, bool state) {
 #if DEBUG
             if (idx < 0 || idx >= _runSystems.Count) { throw new Exception ("Invalid index"); }
 #endif
             _runSystems.Items[idx].Active = state;
+        }
+        
+        /// <summary>
+        /// Sets IEcsRenderSystem active state.
+        /// </summary>
+        /// <param name="idx">Index of system.</param>
+        /// <param name="state">New state of system.</param>
+        public void SetRenderSystemState (int idx, bool state) {
+#if DEBUG
+            if (idx < 0 || idx >= _renderSystems.Count) { throw new Exception ("Invalid index"); }
+#endif
+            _renderSystems.Items[idx].Active = state;
         }
 
         /// <summary>
         /// Gets IEcsRunSystem active state.
         /// </summary>
         /// <param name="idx">Index of system.</param>
-        public bool GetRunSystemState (int idx) {
+        public bool GetUpdateSystemState (int idx) {
 #if DEBUG
             if (idx < 0 || idx >= _runSystems.Count) { throw new Exception ("Invalid index"); }
 #endif
             return _runSystems.Items[idx].Active;
+        }
+        
+        /// <summary>
+        /// Gets IEcsRenderSystem active state.
+        /// </summary>
+        /// <param name="idx">Index of system.</param>
+        public bool GetRenderSystemState (int idx) {
+#if DEBUG
+            if (idx < 0 || idx >= _renderSystems.Count) { throw new Exception ("Invalid index"); }
+#endif
+            return _renderSystems.Items[idx].Active;
         }
 
         /// <summary>
@@ -258,14 +290,14 @@ namespace Trialogue.Ecs {
         /// <summary>
         /// Gets all run systems. Important: Don't change collection!
         /// </summary>
-        public EcsGrowList<EcsSystemsRunItem> GetRunSystems () {
+        public EcsGrowList<EcsSystemsUpdateItem> GetRunSystems () {
             return _runSystems;
         }
 
         /// <summary>
         /// Closes registration for new systems, initialize all registered.
         /// </summary>
-        public void OnStart () {
+        public void OnStart (ref Window.Context context) {
 #if DEBUG
             if (_initialized) { throw new Exception ("Already initialized."); }
             if (_destroyed) { throw new Exception ("Cant touch after destroy."); }
@@ -275,7 +307,7 @@ namespace Trialogue.Ecs {
             for (int i = 0, iMax = _allSystems.Count; i < iMax; i++) {
                 var system = _allSystems.Items[i];
                 if (system is IEcsInitialiseSystem preInitSystem) {
-                    preInitSystem.OnInitialise ();
+                    preInitSystem.OnInitialise (ref context);
 #if DEBUG
                     World.CheckForLeakedEntities ($"{preInitSystem.GetType ().Name}.PreInit()");
 #endif
@@ -285,7 +317,7 @@ namespace Trialogue.Ecs {
             for (int i = 0, iMax = _allSystems.Count; i < iMax; i++) {
                 var system = _allSystems.Items[i];
                 if (system is IEcsStartSystem initSystem) {
-                    initSystem.OnStart ();
+                    initSystem.OnStart (ref context);
 #if DEBUG
                     World.CheckForLeakedEntities ($"{initSystem.GetType ().Name}.Init()");
 #endif
@@ -297,9 +329,9 @@ namespace Trialogue.Ecs {
         }
 
         /// <summary>
-        /// Processes all IEcsRunSystem systems.
+        /// Processes all IEcsUpdateSystem systems.
         /// </summary>
-        public void OnUpdate() {
+        public void OnUpdate(ref Window.Context context) {
 #if DEBUG
             if (!_initialized) { throw new Exception ($"[{Name ?? "NONAME"}] EcsSystems should be initialized before."); }
             if (_destroyed) { throw new Exception ("Cant touch after destroy."); }
@@ -307,7 +339,7 @@ namespace Trialogue.Ecs {
             for (int i = 0, iMax = _runSystems.Count; i < iMax; i++) {
                 var runItem = _runSystems.Items[i];
                 if (runItem.Active) {
-                    runItem.System.OnUpdate ();
+                    runItem.System.OnUpdate (ref context);
                 }
 #if DEBUG
                 if (World.CheckForLeakedEntities (null)) {
@@ -318,30 +350,30 @@ namespace Trialogue.Ecs {
         }
         
         /// <summary>
-        /// Processes the render system.
+        /// Processes all IEcsRenderSystem systems.
         /// </summary>
-        public void OnRender() {
+        public void OnRender(ref Window.Context context) {
 #if DEBUG
-            if (!_initialized) { throw new Exception ($"[{Name ?? "NONAME"}] EcsSystems should be initialized before"); }
-            if (_destroyed) { throw new Exception ("Cant touch after destroy"); }
-
-            if (_renderSystemIndex == -1) throw new Exception("No render system assigned");
+            if (!_initialized) { throw new Exception ($"[{Name ?? "NONAME"}] EcsSystems should be initialized before."); }
+            if (_destroyed) { throw new Exception ("Cant touch after destroy."); }
 #endif
-            var system = _runSystems.Items[_renderSystemIndex];
-            if (system.Active) {
-                system.System.OnUpdate();
-            }
+            for (int i = 0, iMax = _renderSystems.Count; i < iMax; i++) {
+                var runItem = _renderSystems.Items[i];
+                if (runItem.Active) {
+                    runItem.System.OnRender(ref context);
+                }
 #if DEBUG
-            if (World.CheckForLeakedEntities (null)) {
-                throw new Exception ($"Empty entity detected, possible memory leak in {system.GetType().Name}.OnUpdate()");
-            }
+                if (World.CheckForLeakedEntities (null)) {
+                    throw new Exception ($"Empty entity detected, possible memory leak in {_renderSystems.Items[i].GetType ().Name}.Run ()");
+                }
 #endif
+            }
         }
 
         /// <summary>
         /// Destroys registered data.
         /// </summary>
-        public void OnDestroy () {
+        public void OnDestroy (ref Window.Context context) {
 #if DEBUG
             if (_destroyed) { throw new Exception ("Already destroyed."); }
             _destroyed = true;
@@ -350,7 +382,7 @@ namespace Trialogue.Ecs {
             for (var i = _allSystems.Count - 1; i >= 0; i--) {
                 var system = _allSystems.Items[i];
                 if (system is IEcsDestroySystem destroySystem) {
-                    destroySystem.OnDestroy ();
+                    destroySystem.OnDestroy (ref context);
 #if DEBUG
                     World.CheckForLeakedEntities ($"{destroySystem.GetType ().Name}.Destroy ()");
 #endif
@@ -360,7 +392,7 @@ namespace Trialogue.Ecs {
             for (var i = _allSystems.Count - 1; i >= 0; i--) {
                 var system = _allSystems.Items[i];
                 if (system is IEcsPostDestroySystem postDestroySystem) {
-                    postDestroySystem.OnPostDestroy ();
+                    postDestroySystem.OnPostDestroy (ref context);
 #if DEBUG
                     World.CheckForLeakedEntities ($"{postDestroySystem.GetType ().Name}.PostDestroy ()");
 #endif
@@ -378,10 +410,11 @@ namespace Trialogue.Ecs {
     /// System for removing OneFrame component.
     /// </summary>
     /// <typeparam name="T">OneFrame component type.</typeparam>
-    sealed class RemoveOneFrame<T> : IEcsUpdateSystem where T : struct {
+    sealed class RemoveOneFrame<T> : IEcsUpdateSystem where T : struct, IEcsComponent
+    {
         readonly EcsFilter<T> _oneFrames = null;
 
-        void IEcsUpdateSystem.OnUpdate () {
+        void IEcsUpdateSystem.OnUpdate (ref Window.Context context) {
             for (var idx = _oneFrames.GetEntitiesCount () - 1; idx >= 0; idx--) {
                 _oneFrames.GetEntity (idx).Del<T> ();
             }
@@ -391,8 +424,16 @@ namespace Trialogue.Ecs {
     /// <summary>
     /// IEcsRunSystem instance with active state.
     /// </summary>
-    public sealed class EcsSystemsRunItem {
+    public sealed class EcsSystemsUpdateItem {
         public bool Active;
         public IEcsUpdateSystem System;
+    }
+    
+    /// <summary>
+    /// IEcsRenderSystem instance with active state.
+    /// </summary>
+    public sealed class EcsSystemsRenderItem {
+        public bool Active;
+        public IEcsRenderSystem System;
     }
 }

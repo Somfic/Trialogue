@@ -10,6 +10,7 @@ using System.Globalization;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using Trialogue.Components;
 
 namespace Trialogue.Ecs {
     /// <summary>
@@ -105,7 +106,7 @@ namespace Trialogue.Ecs {
             _inDestroying = true;
             CheckForLeakedEntities ("Destroy");
 #endif
-            EcsEntity entity;
+            EcsEntity entity = default;
             entity.Owner = this;
             for (var i = EntitiesCount - 1; i >= 0; i--) {
                 ref var entityData = ref Entities[i];
@@ -139,17 +140,19 @@ namespace Trialogue.Ecs {
         /// Creates new entity.
         /// </summary>
         [MethodImpl (MethodImplOptions.AggressiveInlining)]
-        public EcsEntity NewEntity() {
+        public EcsEntity NewEntity(string name) {
 #if DEBUG
             if (IsDestroyed) { throw new Exception ("EcsWorld already destroyed."); }
 #endif
             EcsEntity entity;
             entity.Owner = this;
+
             // try to reuse entity from pool.
             if (FreeEntities.Count > 0) {
                 entity.Id = FreeEntities.Items[--FreeEntities.Count];
                 ref var entityData = ref Entities[entity.Id];
                 entity.Gen = entityData.Gen;
+                entityData.Name = name;
                 entityData.ComponentsCountX2 = 0;
             } else {
                 // create new entity.
@@ -159,6 +162,7 @@ namespace Trialogue.Ecs {
                 entity.Id = EntitiesCount++;
                 ref var entityData = ref Entities[entity.Id];
                 entityData.Components = new int[Config.EntityComponentsCacheSize * 2];
+                entityData.Name = name;
                 entityData.Gen = 1;
                 entity.Gen = entityData.Gen;
                 entityData.ComponentsCountX2 = 0;
@@ -169,6 +173,9 @@ namespace Trialogue.Ecs {
                 debugListener.OnEntityCreated (entity);
             }
 #endif
+
+            entity.Get<ComponentInfo>().EntityName = name;
+            
             return entity;
         }
 
@@ -179,7 +186,7 @@ namespace Trialogue.Ecs {
         /// <param name="gen">Generation. If less than 0 - will be filled from current generation value.</param>
         [MethodImpl (MethodImplOptions.AggressiveInlining)]
         public EcsEntity RestoreEntityFromInternalId (int id, int gen = -1) {
-            EcsEntity entity;
+            EcsEntity entity = default;
             entity.Owner = this;
             entity.Id = id;
             if (gen < 0) {
@@ -213,7 +220,7 @@ namespace Trialogue.Ecs {
                 return null;
             }
             // create new filter.
-            var filter = (EcsFilter) Activator.CreateInstance (filterType, BindingFlags.NonPublic | BindingFlags.Instance, null, _filterCtor, CultureInfo.InvariantCulture);
+            var filter = (EcsFilter) Activator.CreateInstance (filterType, BindingFlags.Public | BindingFlags.Instance, null, _filterCtor, CultureInfo.InvariantCulture);
 #if DEBUG
             for (var filterIdx = 0; filterIdx < Filters.Count; filterIdx++) {
                 if (filter.AreComponentsSame (Filters.Items[filterIdx])) {
@@ -246,7 +253,7 @@ namespace Trialogue.Ecs {
             }
 #endif
             // scan exist entities for compatibility with new filter.
-            EcsEntity entity;
+            EcsEntity entity = default;
             entity.Owner = this;
             for (int i = 0, iMax = EntitiesCount; i < iMax; i++) {
                 ref var entityData = ref Entities[i];
@@ -388,14 +395,17 @@ namespace Trialogue.Ecs {
         /// Internal state of entity.
         /// </summary>
         [StructLayout (LayoutKind.Sequential, Pack = 2)]
-        public struct EcsEntityData {
+        public struct EcsEntityData
+        {
+            public string Name;
             public ushort Gen;
             public short ComponentsCountX2;
             public int[] Components;
         }
 
         [MethodImpl (MethodImplOptions.AggressiveInlining)]
-        public EcsComponentPool<T> GetPool<T> () where T : struct {
+        public EcsComponentPool<T> GetPool<T> () where T : struct, IEcsComponent
+        {
             var typeIdx = EcsComponentType<T>.TypeIndex;
             if (ComponentPools.Length < typeIdx) {
                 var len = ComponentPools.Length << 1;
@@ -413,6 +423,22 @@ namespace Trialogue.Ecs {
             return pool;
         }
 
+        public void GetEntity(ref EcsEntity entity, int id)
+        {
+            if(EntitiesCount <= id)
+            {
+                return;
+            }
+            
+            ref var entityData = ref Entities[id];
+            entity.Owner = this;
+            if (entityData.ComponentsCountX2 >= 0)
+            {
+                entity.Gen = entityData.Gen;
+                entity.Id = id;
+            }
+        }
+        
         /// <summary>
         /// Gets all alive entities.
         /// </summary>
@@ -423,7 +449,7 @@ namespace Trialogue.Ecs {
             if (entities == null || entities.Length < count) {
                 entities = new EcsEntity[count];
             }
-            EcsEntity e;
+            EcsEntity e = default;
             e.Owner = this;
             var id = 0;
             for (int i = 0, iMax = EntitiesCount; i < iMax; i++) {

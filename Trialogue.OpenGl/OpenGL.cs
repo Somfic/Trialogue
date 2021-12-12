@@ -18,7 +18,7 @@ namespace Trialogue.OpenGl
     [System.Diagnostics.CodeAnalysis.SuppressMessage("ReSharper", "InconsistentNaming")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("ReSharper", "IdentifierTypo")]
     [SuppressUnmanagedCodeSecurity]
-    public static unsafe class GL
+    public static unsafe partial class GL
     {
         private static string PtrToStringUtf8(IntPtr ptr)
         {
@@ -7625,8 +7625,8 @@ namespace Trialogue.OpenGl
         public const int CURRENT_QUERY = 0x8865;
         public const int QUERY_RESULT = 0x8866;
         public const int QUERY_RESULT_AVAILABLE = 0x8867;
-        public const int ARRAY_BUFFER = 0x8892;
-        public const int ELEMENT_ARRAY_BUFFER = 0x8893;
+        public const int ArrayBuffer = 0x8892;
+        public const int ElementArrayBuffer = 0x8893;
         public const int ARRAY_BUFFER_BINDING = 0x8894;
         public const int ELEMENT_ARRAY_BUFFER_BINDING = 0x8895;
         public const int VERTEX_ATTRIB_ARRAY_BUFFER_BINDING = 0x889F;
@@ -7642,7 +7642,7 @@ namespace Trialogue.OpenGl
         public const int STATIC_DRAW = 0x88E4;
         public const int STATIC_READ = 0x88E5;
         public const int STATIC_COPY = 0x88E6;
-        public const int DYNAMIC_DRAW = 0x88E8;
+        public const int DynamicDraw = 0x88E8;
         public const int DYNAMIC_READ = 0x88E9;
         public const int DYNAMIC_COPY = 0x88EA;
         public const int SAMPLES_PASSED = 0x8914;

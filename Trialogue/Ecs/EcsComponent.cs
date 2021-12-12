@@ -15,6 +15,11 @@ namespace Trialogue.Ecs {
     /// Marks component type to be not auto-filled as GetX in filter.
     /// </summary>
     public interface IEcsIgnoreInFilter { }
+    
+    public interface IEcsComponent : IDisposable
+    {
+        void DrawUi(ref EcsEntity ecsEntity);
+    }
 
     /// <summary>
     /// Marks component type for custom reset behaviour.
@@ -64,7 +69,7 @@ namespace Trialogue.Ecs {
 
     public interface IEcsComponentPool {
         Type ItemType { get; }
-        object GetItem (int idx);
+        IEcsComponent GetItem (int idx);
         void Recycle (int idx);
         int New ();
         void CopyData (int srcIdx, int dstIdx);
@@ -74,7 +79,8 @@ namespace Trialogue.Ecs {
     /// Helper for save reference to component. 
     /// </summary>
     /// <typeparam name="T">Type of component.</typeparam>
-    public struct EcsComponentRef<T> where T : struct {
+    public struct EcsComponentRef<T> where T : struct, IEcsComponent
+    {
         internal EcsComponentPool<T> Pool;
         internal int Idx;
         
@@ -90,12 +96,13 @@ namespace Trialogue.Ecs {
 #endif
     public static class EcsComponentRefExtensions {
         [MethodImpl (MethodImplOptions.AggressiveInlining)]
-        public static ref T Unref<T> (in this EcsComponentRef<T> wrapper) where T : struct {
+        public static ref T Unref<T> (in this EcsComponentRef<T> wrapper) where T : struct, IEcsComponent
+        {
             return ref wrapper.Pool.Items[wrapper.Idx];
         }
 
         [MethodImpl (MethodImplOptions.AggressiveInlining)]
-        public static bool IsNull<T> (in this EcsComponentRef<T> wrapper) where T : struct {
+        public static bool IsNull<T> (in this EcsComponentRef<T> wrapper) where T : struct, IEcsComponent {
             return wrapper.Pool == null;
         }
     }
@@ -108,7 +115,7 @@ namespace Trialogue.Ecs {
     [Unity.IL2CPP.CompilerServices.Il2CppSetOption (Unity.IL2CPP.CompilerServices.Option.NullChecks, false)]
     [Unity.IL2CPP.CompilerServices.Il2CppSetOption (Unity.IL2CPP.CompilerServices.Option.ArrayBoundsChecks, false)]
 #endif
-    public sealed class EcsComponentPool<T> : IEcsComponentPool where T : struct {
+    public sealed class EcsComponentPool<T> : IEcsComponentPool where T : struct, IEcsComponent {
         delegate void AutoResetHandler (ref T component);
 
         public Type ItemType { get; }
@@ -239,7 +246,7 @@ namespace Trialogue.Ecs {
             return componentRef;
         }
 
-        object IEcsComponentPool.GetItem (int idx) {
+        IEcsComponent IEcsComponentPool.GetItem (int idx) {
             return Items[idx];
         }
     }

@@ -1,10 +1,13 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System;
+using System.Diagnostics;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Trialogue.Ecs;
-using Trialogue.Glfw;
 using Trialogue.Systems.Rendering;
 using Trialogue.Window;
+using Veldrid;
+using Context = Trialogue.Window.Context;
 
 namespace Trialogue
 {
@@ -86,52 +89,79 @@ namespace Trialogue
             _host = _hostBuilder.Build();
   
             // Create the window
-            var nativeWindow = _host.Services.GetRequiredService<WindowFactory>().Create(_windowOptions);
-            
+            var (nativeWindow, graphicsDevice, commandList) = _host.Services.GetRequiredService<WindowFactory>().Create(_windowOptions);
+
             // Get the window implementation
             var window = _host.Services.GetRequiredService<Window.Window>();
+            
             window._world = new EcsWorld();
             window._systems = new EcsSystems(window._world);
             window._serviceProvider = _host.Services;
+            window.GraphicsDevice = graphicsDevice;
+            window.ResourceFactory = graphicsDevice.ResourceFactory;
 
             window.OnInitialise();
-            window.CreateSystem<RenderSystem>();
+
+            var context = new Context();
+            context.Window.Size = _windowOptions.Size;
+            context.Window.Native = nativeWindow;
+            context.Window.GraphicsDevice = graphicsDevice;
+            context.Window.CommandList = commandList;
+            context.Process = Process.GetCurrentProcess();
             
-            window._systems.OnStart();
+            nativeWindow.Resized += () =>
+            {
+                context.Window.Size.Width = nativeWindow.Width;
+                context.Window.Size.Height = nativeWindow.Height;
+                context.Window.GraphicsDevice.MainSwapchain.Resize((uint) nativeWindow.Width, (uint) nativeWindow.Height);
+            };
+
+            window._systems.OnStart(ref context);
             window._hasInitialised = true;
 
-            var lastTime = GLFW.Time;
-            while (!GLFW.WindowShouldClose(nativeWindow))
+            var stopwatch = Stopwatch.StartNew();
+            float lastTime = 0;
+            float lastGarbageCollection = 0;
+            while (nativeWindow.Exists)
             {
-                GLFW.PollEvents();
+                var snapshot = nativeWindow.PumpEvents();
+                context.Input = snapshot;
                 
-                var time = GLFW.Time;
-                var context = new Context
+                context.Time.Total = (float) stopwatch.Elapsed.TotalSeconds;
+                context.Time.Delta = context.Time.Total - lastTime;
+                lastTime = context.Time.Total;
+
+                window.OnUpdate(ref context);
+                window._systems.OnUpdate(ref context);
+                
+                commandList.Begin();
+                commandList.SetFramebuffer(graphicsDevice.MainSwapchain.Framebuffer);
+                commandList.ClearColorTarget(0, RgbaFloat.Black);
+                commandList.ClearDepthStencil(1f);
+
+                window.OnRender(ref context);
+                window._systems.OnRender(ref context);
+                    
+                commandList.End();
+                graphicsDevice.SubmitCommands(commandList);
+                graphicsDevice.SwapBuffers(graphicsDevice.MainSwapchain);
+                graphicsDevice.WaitForIdle();
+                
+                // Collect garbage every 10 seconds
+                if (lastGarbageCollection + 10 < context.Time.Total)
                 {
-                    Time = time,
-                    DeltaTime = lastTime - time 
-                };
-                lastTime = time;
-
-                window.OnUpdate();
-                window._systems.OnUpdate();
-                
-                window.OnRender();
-                window._systems.OnRender();
-                
-                GLFW.SwapBuffers(nativeWindow);
+                    GC.Collect();
+                    lastGarbageCollection = context.Time.Total;
+                }
             }
+            
+            graphicsDevice.WaitForIdle();
+            commandList.Dispose();
+            graphicsDevice.Dispose();
 
-            window.OnDestroy();
-            window._systems.OnDestroy();
+            window.OnDestroy(ref context);
+            window._systems.OnDestroy(ref context);
             window._world.Destroy();
         }
-    }
-    
-    public struct Context
-    {
-        public double DeltaTime;
-
-        public double Time;
     }
 }

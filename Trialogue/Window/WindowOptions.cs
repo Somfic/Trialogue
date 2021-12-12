@@ -1,5 +1,6 @@
 ﻿using System.Drawing;
 using System.Numerics;
+using Veldrid;
 
 namespace Trialogue.Window
 {
@@ -42,5 +43,7 @@ namespace Trialogue.Window
 
         public bool TopMost { get; init; } = false;
         public bool FocusOnShow { get; init; } = true;
+
+        public GraphicsBackend Backend { get; init; } = GraphicsBackend.OpenGL;
     }
 }

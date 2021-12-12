@@ -1,15 +1,25 @@
-﻿using System.Numerics;
+﻿using System;
+using System.Drawing;
+using System.IO;
+using System.Numerics;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Trialogue;
+using Trialogue.Components;
 using Trialogue.Ecs;
+using Trialogue.Importer;
 using Trialogue.Systems.Rendering;
 using Trialogue.Window;
+using Veldrid;
 
 namespace Hireath
 {
     internal class Hireath : Window
     {
         private readonly ILogger<Hireath> _log;
+        
+        private EcsEntity camera;
+        private EcsEntity cube;
 
         public Hireath(ILogger<Hireath> log)
         {
@@ -18,43 +28,40 @@ namespace Hireath
 
         public override void OnInitialise()
         {
-            _log.LogInformation("Hello!");
+            AddSystem<RenderSystem>();
+            AddSystem<UiRenderSystem>();
+            //AddSystem<CameraSystem>();
 
-            var triangle = CreateEntity();
-            ref var mesh = ref triangle.Get<MeshComponent>();
-            ref var material = ref triangle.Get<MaterialComponent>();
-            
-            mesh.Vertices = new[] {
-                -1f, 1f, 1f, 0f, 0f, // top left
-                1f, 1f, 0f, 1f, 0f,// top right
-                -1f, -1f, 0f, 0f, 1f, // bottom left
-
-                1f, 1f, 0f, 1f, 0f,// top right
-                1f, -1f, 0f, 1f, 1f, // bottom right
-                -1f, -1f, 0f, 0f, 1f, // bottom left
-            };
-            
-            string vertexShader = @"#version 330 core
-                                    layout (location = 0) in vec2 aPosition;
-                                    layout (location = 1) in vec3 aColor;
-                                    out vec4 vertexColor;
+            camera = CreateEntity("Camera");
+            ref var cameraCamera = ref camera.Get<Camera>();
+            ref var cameraTransform = ref camera.Get<Transform>();
     
-                                    void main() 
-                                    {
-                                        vertexColor = vec4(aColor.rgb, 1.0);
-                                        gl_Position = vec4(aPosition.xy, 0, 1.0);
-                                    }";
+            cameraCamera.IsOrthographic = false;
+            cameraCamera.NearPlane = 0.001f;
+            cameraCamera.FarPlane = 10000f;
+            cameraCamera.FieldOfView = MathF.PI / 2f;
+            cameraCamera.IsFollowingTarget = true;
 
-            string fragmentShader = @"#version 330 core
-                                    out vec4 FragColor;
-                                    in vec4 vertexColor;
+            cameraTransform.Position = new Vector3(0, 0, 10);
 
-                                    void main() 
-                                    {
-                                        FragColor = vertexColor;
-                                    }";
+            cube = CreateEntity("Square");
+            ref var model = ref cube.Get<Model>();
+            ref var material = ref cube.Get<Material>();
+            ref var renderer = ref cube.Get<Renderer>();
+            ref var transform = ref cube.Get<Transform>();
+
+            model.SetModel("Models/test.3ds");
             
-            material.SetShaders(Shader.FromText(vertexShader, Shader.ShaderType.VertexShader), Shader.FromText(fragmentShader, Shader.ShaderType.FragmentShader));
+            transform.Scale = Vector3.One;
+
+            material.SetShaders(
+                Material.Shader.FromFile("Shaders/vertex.vert"),
+                Material.Shader.FromFile("Shaders/fragment.frag"));
+        }
+
+        public override void OnUpdate(ref Context context)
+        {
+            cube.Get<Transform>().Rotation = new Vector3((context.Time.Total * MathF.PI * 10) % 360f);
         }
     }
 
@@ -68,7 +75,11 @@ namespace Hireath
                 StartCentered = false,
                 FocusOnShow = false,
                 Title = "Hireath",
-                Position = new Vector2(2450, 100)
+                Position = new Vector2(0, 40),
+                Size = new Size(1000, 800),
+                SampleSize = 4,
+                Resizable = true,
+                VSync = true,
             });
             game.Run();
         }

@@ -6,14 +6,14 @@ namespace Trialogue.Window
 {
     public abstract class Window
     {
-        internal EcsWorld _world;
-        internal EcsSystems _systems;
         internal bool _hasInitialised;
         internal IServiceProvider _serviceProvider;
-        
+        internal EcsSystems _systems;
+        internal EcsWorld _world;
+
         public GraphicsDevice GraphicsDevice { get; internal set; }
         public ResourceFactory ResourceFactory { get; internal set; }
-        
+
         public virtual void OnInitialise()
         {
         }
@@ -32,10 +32,7 @@ namespace Trialogue.Window
 
         public void AddSystem<T>(string namedRunSystem = null) where T : IEcsSystem
         {
-            if (_hasInitialised)
-            {
-                throw new Exception("Cannot add system after initialisation");
-            }
+            if (_hasInitialised) throw new Exception("Cannot add system after initialisation");
 
             _systems.Add<T>(_serviceProvider, namedRunSystem);
         }

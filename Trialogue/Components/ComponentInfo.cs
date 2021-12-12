@@ -1,7 +1,5 @@
-﻿using System;
-using ImGuiNET;
+﻿using ImGuiNET;
 using Trialogue.Ecs;
-using Veldrid;
 
 namespace Trialogue.Components
 {
@@ -16,10 +14,9 @@ namespace Trialogue.Components
             ImGui.InputText("Name", ref EntityName, 20);
             ecsEntity.Update(this);
         }
-        
+
         public void Dispose()
         {
-            
         }
     }
 }

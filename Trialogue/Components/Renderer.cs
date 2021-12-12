@@ -1,5 +1,4 @@
-﻿using System;
-using Trialogue.Ecs;
+﻿using Trialogue.Ecs;
 using Veldrid;
 
 namespace Trialogue.Components
@@ -12,7 +11,7 @@ namespace Trialogue.Components
         {
             ecsEntity.Update(this);
         }
-        
+
         public void Dispose()
         {
             PipeLine?.Dispose();

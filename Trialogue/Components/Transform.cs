@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Numerics;
 using ImGuiNET;
-using Trialogue.Common;
 using Trialogue.Ecs;
 using Trialogue.Window;
 using Veldrid;
@@ -13,14 +12,14 @@ namespace Trialogue.Components
         public Vector3 Position;
         public Vector3 Scale;
         public Vector3 Rotation;
-        
+
         public DeviceBuffer WorldBuffer;
         public ResourceSet WorldSet;
 
         internal Matrix4x4 CalculateWorldMatrix(ref Context context)
         {
             var transform = Matrix4x4.CreateTranslation(Position);
-            
+
             var rotationX = Matrix4x4.CreateRotationX(Rotation.X * MathF.PI / 180f);
             var rotationY = Matrix4x4.CreateRotationY(Rotation.Y * MathF.PI / 180f);
             var rotationZ = Matrix4x4.CreateRotationZ(Rotation.Z * MathF.PI / 180f);
@@ -37,10 +36,9 @@ namespace Trialogue.Components
 
             ecsEntity.Update(this);
         }
-        
+
         public void Dispose()
         {
-        
         }
     }
 }

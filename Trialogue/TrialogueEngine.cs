@@ -4,15 +4,18 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Trialogue.Ecs;
-using Trialogue.Systems.Rendering;
 using Trialogue.Window;
 using Veldrid;
-using Context = Trialogue.Window.Context;
 
 namespace Trialogue
 {
     public class TrialogueEngine
     {
+        private readonly IHostBuilder _hostBuilder;
+        private IHost _host;
+
+        private WindowOptions _windowOptions;
+
         private TrialogueEngine()
         {
             _hostBuilder = Host.CreateDefaultBuilder();
@@ -26,7 +29,7 @@ namespace Trialogue
         }
 
         /// <summary>
-        /// Creates a new TrialogueEngine object
+        ///     Creates a new TrialogueEngine object
         /// </summary>
         /// <typeparam name="T">The implementation of the window</typeparam>
         /// <returns></returns>
@@ -34,9 +37,9 @@ namespace Trialogue
         {
             return Create<T>(new WindowOptions());
         }
-        
+
         /// <summary>
-        /// Creates a new TrialogueEngine object
+        ///     Creates a new TrialogueEngine object
         /// </summary>
         /// <param name="windowOptions">The options for the window</param>
         /// <typeparam name="T">The implementation of the window</typeparam>
@@ -47,53 +50,44 @@ namespace Trialogue
             {
                 _windowOptions = windowOptions
             };
-            
+
             t.Inject<Window.Window, T>();
             t.Inject<WindowFactory>();
 
             return t;
         }
 
-        private WindowOptions _windowOptions;
-        private readonly IHostBuilder _hostBuilder;
-        private IHost _host;
-
         /// <summary>
-        /// Injects a service into the engine
+        ///     Injects a service into the engine
         /// </summary>
         /// <typeparam name="TService">The type of service to inject</typeparam>
         public void Inject<TService>() where TService : class
         {
-            _hostBuilder.ConfigureServices(e =>
-            {
-                e.AddSingleton<TService>();
-            });
+            _hostBuilder.ConfigureServices(e => { e.AddSingleton<TService>(); });
         }
-        
+
         /// <summary>
-        /// Injects a service into the engine
+        ///     Injects a service into the engine
         /// </summary>
         /// <typeparam name="TService">The type of service to inject</typeparam>
         /// <typeparam name="TImplementation">The type of implementation to use</typeparam>
         public void Inject<TService, TImplementation>() where TService : class where TImplementation : class, TService
         {
-            _hostBuilder.ConfigureServices(e =>
-            {
-                e.AddSingleton<TService, TImplementation>();
-            });
+            _hostBuilder.ConfigureServices(e => { e.AddSingleton<TService, TImplementation>(); });
         }
 
         public void Run()
         {
             // Build the host
             _host = _hostBuilder.Build();
-  
+
             // Create the window
-            var (nativeWindow, graphicsDevice, commandList) = _host.Services.GetRequiredService<WindowFactory>().Create(_windowOptions);
+            var (nativeWindow, graphicsDevice, commandList) =
+                _host.Services.GetRequiredService<WindowFactory>().Create(_windowOptions);
 
             // Get the window implementation
             var window = _host.Services.GetRequiredService<Window.Window>();
-            
+
             window._world = new EcsWorld();
             window._systems = new EcsSystems(window._world);
             window._serviceProvider = _host.Services;
@@ -108,12 +102,13 @@ namespace Trialogue
             context.Window.GraphicsDevice = graphicsDevice;
             context.Window.CommandList = commandList;
             context.Process = Process.GetCurrentProcess();
-            
+
             nativeWindow.Resized += () =>
             {
                 context.Window.Size.Width = nativeWindow.Width;
                 context.Window.Size.Height = nativeWindow.Height;
-                context.Window.GraphicsDevice.MainSwapchain.Resize((uint) nativeWindow.Width, (uint) nativeWindow.Height);
+                context.Window.GraphicsDevice.MainSwapchain.Resize((uint) nativeWindow.Width,
+                    (uint) nativeWindow.Height);
             };
 
             window._systems.OnStart(ref context);
@@ -126,14 +121,14 @@ namespace Trialogue
             {
                 var snapshot = nativeWindow.PumpEvents();
                 context.Input = snapshot;
-                
+
                 context.Time.Total = (float) stopwatch.Elapsed.TotalSeconds;
                 context.Time.Delta = context.Time.Total - lastTime;
                 lastTime = context.Time.Total;
 
                 window.OnUpdate(ref context);
                 window._systems.OnUpdate(ref context);
-                
+
                 commandList.Begin();
                 commandList.SetFramebuffer(graphicsDevice.MainSwapchain.Framebuffer);
                 commandList.ClearColorTarget(0, RgbaFloat.Black);
@@ -141,12 +136,12 @@ namespace Trialogue
 
                 window.OnRender(ref context);
                 window._systems.OnRender(ref context);
-                    
+
                 commandList.End();
                 graphicsDevice.SubmitCommands(commandList);
                 graphicsDevice.SwapBuffers(graphicsDevice.MainSwapchain);
                 graphicsDevice.WaitForIdle();
-                
+
                 // Collect garbage every 10 seconds
                 if (lastGarbageCollection + 10 < context.Time.Total)
                 {
@@ -154,7 +149,7 @@ namespace Trialogue
                     lastGarbageCollection = context.Time.Total;
                 }
             }
-            
+
             graphicsDevice.WaitForIdle();
             commandList.Dispose();
             graphicsDevice.Dispose();

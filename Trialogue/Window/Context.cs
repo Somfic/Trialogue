@@ -12,18 +12,18 @@ namespace Trialogue.Window
         public TimeContext Time;
 
         public Process Process;
-        
+
         public struct WindowContext
         {
             public Size Size;
 
             public Sdl2Window Native;
-            
+
             public GraphicsDevice GraphicsDevice;
-            
+
             public CommandList CommandList;
         }
-        
+
         public struct TimeContext
         {
             public float Total;

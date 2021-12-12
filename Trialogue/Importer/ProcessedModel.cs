@@ -14,16 +14,6 @@ namespace Trialogue.Importer
 
     public class Mesh
     {
-        public string Name { get; set; }
-        
-        public byte[] VertexData { get; set; }
-        public VertexElementDescription[] VertexElements { get; set; }
-        public byte[] IndexData { get; set; }
-        public IndexFormat IndexFormat { get; set; }
-        public uint IndexCount { get; set; }
-        public Dictionary<string, uint> BoneIDsByName { get; set; }
-        public Matrix4x4[] BoneOffsets { get; set; }
-
         public Mesh(
             string name,
             byte[] vertexData,
@@ -44,16 +34,26 @@ namespace Trialogue.Importer
             BoneOffsets = boneOffsets;
         }
 
+        public string Name { get; set; }
+
+        public byte[] VertexData { get; set; }
+        public VertexElementDescription[] VertexElements { get; set; }
+        public byte[] IndexData { get; set; }
+        public IndexFormat IndexFormat { get; set; }
+        public uint IndexCount { get; set; }
+        public Dictionary<string, uint> BoneIDsByName { get; set; }
+        public Matrix4x4[] BoneOffsets { get; set; }
+
         public ModelResources CreateDeviceResources(
             GraphicsDevice gd,
             ResourceFactory factory)
         {
             var vertexBuffer = factory.CreateBuffer(new BufferDescription(
-                (uint)VertexData.Length, BufferUsage.VertexBuffer));
+                (uint) VertexData.Length, BufferUsage.VertexBuffer));
             gd.UpdateBuffer(vertexBuffer, 0, VertexData);
 
             var indexBuffer = factory.CreateBuffer(new BufferDescription(
-                (uint)IndexData.Length, BufferUsage.IndexBuffer));
+                (uint) IndexData.Length, BufferUsage.IndexBuffer));
             gd.UpdateBuffer(indexBuffer, 0, IndexData);
 
             return new ModelResources(vertexBuffer, indexBuffer, IndexFormat, IndexCount);
@@ -84,7 +84,8 @@ namespace Trialogue.Importer
 
     public class ProcessedAnimationChannel
     {
-        public ProcessedAnimationChannel(string nodeName, VectorKey[] positions, VectorKey[] scales, QuaternionKey[] rotations)
+        public ProcessedAnimationChannel(string nodeName, VectorKey[] positions, VectorKey[] scales,
+            QuaternionKey[] rotations)
         {
             NodeName = nodeName;
             Positions = positions;
@@ -159,7 +160,8 @@ namespace Trialogue.Importer
         public readonly IndexFormat IndexFormat;
         public readonly uint IndexCount;
 
-        public ModelResources(DeviceBuffer vertexBuffer, DeviceBuffer indexBuffer, IndexFormat indexFormat, uint indexCount)
+        public ModelResources(DeviceBuffer vertexBuffer, DeviceBuffer indexBuffer, IndexFormat indexFormat,
+            uint indexCount)
         {
             VertexBuffer = vertexBuffer;
             IndexBuffer = indexBuffer;
@@ -174,7 +176,7 @@ namespace Trialogue.Importer
         {
             var parts = reader.ReadObjectArray(ReadMeshPart);
 
-            return new ProcessedModel()
+            return new ProcessedModel
             {
                 MeshParts = parts
             };

@@ -9,7 +9,10 @@ namespace Trialogue.Importer
 
     public abstract class BinaryAssetProcessor<T> : BinaryAssetProcessor
     {
-        public override object Process(Stream stream, string extension, object shading) => ProcessT(stream, extension, (Shading) shading);
+        public override object Process(Stream stream, string extension, object shading)
+        {
+            return ProcessT(stream, extension, (Shading) shading);
+        }
 
         public abstract T ProcessT(Stream stream, string extension, Shading shading);
     }

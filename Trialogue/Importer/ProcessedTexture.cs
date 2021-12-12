@@ -6,15 +6,6 @@ namespace Trialogue.Importer
 {
     public class ProcessedTexture
     {
-        public PixelFormat Format { get; set; }
-        public TextureType Type { get; set; }
-        public uint Width { get; set; }
-        public uint Height { get; set; }
-        public uint Depth { get; set; }
-        public uint MipLevels { get; set; }
-        public uint ArrayLayers { get; set; }
-        public byte[] TextureData { get; set; }
-
         public ProcessedTexture(
             PixelFormat format,
             TextureType type,
@@ -34,6 +25,15 @@ namespace Trialogue.Importer
             ArrayLayers = arrayLayers;
             TextureData = textureData;
         }
+
+        public PixelFormat Format { get; set; }
+        public TextureType Type { get; set; }
+        public uint Width { get; set; }
+        public uint Height { get; set; }
+        public uint Depth { get; set; }
+        public uint MipLevels { get; set; }
+        public uint ArrayLayers { get; set; }
+        public byte[] TextureData { get; set; }
 
         public unsafe Texture CreateDeviceTexture(GraphicsDevice gd, ResourceFactory rf, TextureUsage usage)
         {
@@ -56,7 +56,7 @@ namespace Trialogue.Importer
                     for (uint layer = 0; layer < ArrayLayers; layer++)
                     {
                         gd.UpdateTexture(
-                            staging, (IntPtr)(texDataPtr + offset), subresourceSize,
+                            staging, (IntPtr) (texDataPtr + offset), subresourceSize,
                             0, 0, 0, mipWidth, mipHeight, mipDepth,
                             level, layer);
                         offset += subresourceSize;
@@ -86,10 +86,7 @@ namespace Trialogue.Importer
         public static uint GetDimension(uint largestLevelDimension, uint mipLevel)
         {
             var ret = largestLevelDimension;
-            for (uint i = 0; i < mipLevel; i++)
-            {
-                ret /= 2;
-            }
+            for (uint i = 0; i < mipLevel; i++) ret /= 2;
 
             return Math.Max(1, ret);
         }

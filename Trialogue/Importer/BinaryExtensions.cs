@@ -34,20 +34,14 @@ namespace Trialogue.Importer
         public static void WriteObjectArray<T>(this BinaryWriter writer, T[] array, Action<BinaryWriter, T> writeFunc)
         {
             writer.Write(array.Length);
-            foreach (var item in array)
-            {
-                writeFunc(writer, item);
-            }
+            foreach (var item in array) writeFunc(writer, item);
         }
 
         public static T[] ReadObjectArray<T>(this BinaryReader reader, Func<BinaryReader, T> readFunc)
         {
             var length = reader.ReadInt32();
             var ret = new T[length];
-            for (var i = 0; i < length; i++)
-            {
-                ret[i] = readFunc(reader);
-            }
+            for (var i = 0; i < length; i++) ret[i] = readFunc(reader);
 
             return ret;
         }
@@ -58,13 +52,10 @@ namespace Trialogue.Importer
             var totalBytes = array.Length * sizeofT;
 
             var handle = GCHandle.Alloc(array, GCHandleType.Pinned);
-            var ptr = (byte*)handle.AddrOfPinnedObject();
+            var ptr = (byte*) handle.AddrOfPinnedObject();
 
             writer.Write(array.Length);
-            for (var i = 0; i < totalBytes; i++)
-            {
-                writer.Write(ptr[i]);
-            }
+            for (var i = 0; i < totalBytes; i++) writer.Write(ptr[i]);
 
             handle.Free();
         }
@@ -77,11 +68,8 @@ namespace Trialogue.Importer
             var handle = GCHandle.Alloc(ret, GCHandleType.Pinned);
 
             var totalBytes = length * sizeofT;
-            var ptr = (byte*)handle.AddrOfPinnedObject();
-            for (var i = 0; i < totalBytes; i++)
-            {
-                ptr[i] = reader.ReadByte();
-            }
+            var ptr = (byte*) handle.AddrOfPinnedObject();
+            for (var i = 0; i < totalBytes; i++) ptr[i] = reader.ReadByte();
 
             handle.Free();
 

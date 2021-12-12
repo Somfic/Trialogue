@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Numerics;
 using ImGuiNET;
-using Trialogue.Common;
 using Trialogue.Ecs;
 using Trialogue.Window;
 using Veldrid;
@@ -11,14 +10,11 @@ namespace Trialogue.Components
     public struct Camera : IEcsComponent
     {
         public bool IsOrthographic;
-
         public float NearPlane;
         public float FarPlane;
         public float FieldOfView;
         public float Zoom;
-
         public float Cone;
-
         public bool IsFollowingTarget;
         public Vector3 Target;
 
@@ -32,13 +28,10 @@ namespace Trialogue.Components
         {
             NearPlane = Math.Min(FarPlane, NearPlane);
 
-            if (NearPlane == 0)
-            {
-                NearPlane = 0.001f;
-            }
+            if (NearPlane == 0) NearPlane = 0.001f;
 
             FarPlane = Math.Max(FarPlane, NearPlane + 0.001f);
-            
+
             Cone = MathF.Max(0.1f, MathF.Min(Cone, 100));
 
             var proj = IsOrthographic
@@ -59,7 +52,7 @@ namespace Trialogue.Components
                 var forward = Vector3.Normalize(transform.Position - Target);
                 var right = Vector3.Cross(Vector3.Normalize(Vector3.UnitY), forward);
                 var up = Vector3.Cross(forward, right);
-                
+
                 translation = Matrix4x4.CreateLookAt(transform.Position, Target, up);
             }
             else
@@ -83,13 +76,9 @@ namespace Trialogue.Components
             ImGui.DragFloat("Far plane", ref FarPlane, 1f, NearPlane, float.MaxValue);
 
             if (IsOrthographic)
-            {
                 ImGui.SliderFloat("Cone size", ref Cone, 0.1f, 100f);
-            }
             else
-            {
                 ImGui.SliderAngle("Field of view", ref FieldOfView, 1f, 179f);
-            }
 
             ImGui.SliderFloat("Zoom", ref Zoom, 1f, 100f);
 

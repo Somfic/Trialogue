@@ -7,40 +7,42 @@
 using System;
 using System.Runtime.CompilerServices;
 
-namespace Trialogue.Ecs {
+namespace Trialogue.Ecs
+{
     /// <summary>
-    /// Fast List replacement for growing only collections.
+    ///     Fast List replacement for growing only collections.
     /// </summary>
     /// <typeparam name="T">Type of item.</typeparam>
-    public class EcsGrowList<T> {
-        public T[] Items;
+    public class EcsGrowList<T>
+    {
         public int Count;
+        public T[] Items;
 
-        [MethodImpl (MethodImplOptions.AggressiveInlining)]
-        public EcsGrowList (int capacity) {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public EcsGrowList(int capacity)
+        {
 #if DEBUG
-            if (capacity <= 0) { throw new Exception ("Capacity should be greater than zero."); }
+            if (capacity <= 0) throw new Exception("Capacity should be greater than zero.");
 #endif
             Items = new T[capacity];
             Count = 0;
         }
 
-        [MethodImpl (MethodImplOptions.AggressiveInlining)]
-        public void Add (T item) {
-            if (Items.Length == Count) {
-                Array.Resize (ref Items, Items.Length << 1);
-            }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Add(T item)
+        {
+            if (Items.Length == Count) Array.Resize(ref Items, Items.Length << 1);
             Items[Count++] = item;
         }
 
-        [MethodImpl (MethodImplOptions.AggressiveInlining)]
-        public void EnsureCapacity (int count) {
-            if (Items.Length < count) {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void EnsureCapacity(int count)
+        {
+            if (Items.Length < count)
+            {
                 var len = Items.Length << 1;
-                while (len <= count) {
-                    len <<= 1;
-                }
-                Array.Resize (ref Items, len);
+                while (len <= count) len <<= 1;
+                Array.Resize(ref Items, len);
             }
         }
     }
@@ -54,7 +56,8 @@ namespace Unity.IL2CPP.CompilerServices {
         ArrayBoundsChecks = 2
     }
 
-    [AttributeUsage (AttributeTargets.Class | AttributeTargets.Method | AttributeTargets.Property, Inherited = false, AllowMultiple = true)]
+    [AttributeUsage (AttributeTargets.Class | AttributeTargets.Method | AttributeTargets.Property, Inherited =
+ false, AllowMultiple = true)]
     class Il2CppSetOptionAttribute : Attribute {
         public Option Option { get; private set; }
         public object Value { get; private set; }

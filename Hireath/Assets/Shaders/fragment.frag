@@ -14,7 +14,7 @@ void main()
     vec3 objectColor = vec3(1, 1, 1);
 
     float specularStrength = 0.5;
-    
+
     // ambient
     float ambientStrength = 0.1;
     vec3 ambient = ambientStrength * lightColor;

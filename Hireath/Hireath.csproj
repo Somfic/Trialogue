@@ -7,35 +7,35 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Trialogue\Trialogue.csproj" />
+        <ProjectReference Include="..\Trialogue\Trialogue.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-      <None Update="Assets\Shaders\fragment.frag">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="Assets\Shaders\vertex.vert">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="Assets\Models\test.obj">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="Assets\Models\Keyboard.obj">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="Assets\Models\cube.obj">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="Assets\Models\cow.obj">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="Assets\Models\test.3ds">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="Assets\Models\pot.obj">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Remove="imgui.ini" />
+        <None Update="Assets\Shaders\fragment.frag">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Assets\Shaders\vertex.vert">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Assets\Models\test.obj">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Assets\Models\Keyboard.obj">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Assets\Models\cube.obj">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Assets\Models\cow.obj">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Assets\Models\test.3ds">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Assets\Models\pot.obj">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Remove="imgui.ini"/>
     </ItemGroup>
 
 </Project>

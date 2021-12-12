@@ -1,5 +1,4 @@
-﻿using System.Numerics;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Veldrid;
 using Veldrid.Sdl2;
 using Veldrid.StartupUtilities;
@@ -14,12 +13,12 @@ namespace Trialogue.Window
         {
             _log = log;
         }
-        
+
         public (Sdl2Window, GraphicsDevice, CommandList) Create(WindowOptions options)
         {
             _log.LogTrace("Creating window {Name}", options.Title);
 
-            var window = VeldridStartup.CreateWindow(new WindowCreateInfo()
+            var window = VeldridStartup.CreateWindow(new WindowCreateInfo
             {
                 WindowTitle = options.Title,
                 WindowWidth = options.Size.Width,
@@ -29,14 +28,14 @@ namespace Trialogue.Window
             window.Resizable = options.Resizable;
             window.X = (int) options.Position.X;
             window.Y = (int) options.Position.Y;
-            
+
 #if DEBUG
             var isDebug = true;
 #else
             bool isDebug = false;
 #endif
-            
-            var graphicsDevice = VeldridStartup.CreateGraphicsDevice(window, new GraphicsDeviceOptions()
+
+            var graphicsDevice = VeldridStartup.CreateGraphicsDevice(window, new GraphicsDeviceOptions
             {
                 Debug = isDebug,
                 SyncToVerticalBlank = options.VSync,
@@ -44,7 +43,7 @@ namespace Trialogue.Window
                 PreferDepthRangeZeroToOne = true,
                 SwapchainDepthFormat = PixelFormat.R16_UNorm
             }, options.Backend);
-            
+
             var commandList = graphicsDevice.ResourceFactory.CreateCommandList();
 
             return (window, graphicsDevice, commandList);

@@ -17,24 +17,20 @@ namespace Trialogue.Components
         public void SetModel(string path, Shading shadingMode = Shading.Flat)
         {
             var fullPath = Assets.Assets.Get(path);
-            
+
             using var file = File.OpenRead(fullPath);
             ProcessedModel = new AssimpProcessor().ProcessT(file, Path.GetExtension(fullPath), shadingMode);
 
             VerticesCount = ProcessedModel.MeshParts.Sum(x => x.VertexElements.Length);
         }
-        
+
         public void DrawUi(ref EcsEntity ecsEntity)
         {
-            foreach (var mesh in ProcessedModel.MeshParts)
-            {
-                ImGui.Text($"{mesh.Name} ({mesh.IndexCount} vertices)");
-            }
+            foreach (var mesh in ProcessedModel.MeshParts) ImGui.Text($"{mesh.Name} ({mesh.IndexCount} vertices)");
         }
-        
+
         public void Dispose()
         {
-            
         }
     }
 }

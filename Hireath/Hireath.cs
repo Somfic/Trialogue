@@ -1,23 +1,19 @@
 ﻿using System;
 using System.Drawing;
-using System.IO;
 using System.Numerics;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using Trialogue;
 using Trialogue.Components;
 using Trialogue.Ecs;
-using Trialogue.Importer;
 using Trialogue.Systems.Rendering;
 using Trialogue.Window;
-using Veldrid;
 
 namespace Hireath
 {
     internal class Hireath : Window
     {
         private readonly ILogger<Hireath> _log;
-        
+
         private EcsEntity camera;
         private EcsEntity cube;
 
@@ -35,7 +31,7 @@ namespace Hireath
             camera = CreateEntity("Camera");
             ref var cameraCamera = ref camera.Get<Camera>();
             ref var cameraTransform = ref camera.Get<Transform>();
-    
+
             cameraCamera.IsOrthographic = false;
             cameraCamera.NearPlane = 0.001f;
             cameraCamera.FarPlane = 10000f;
@@ -50,8 +46,8 @@ namespace Hireath
             ref var renderer = ref cube.Get<Renderer>();
             ref var transform = ref cube.Get<Transform>();
 
-            model.SetModel("Models/test.3ds");
-            
+            model.SetModel("Models/keyboard.obj");
+
             transform.Scale = Vector3.One;
 
             material.SetShaders(
@@ -61,7 +57,7 @@ namespace Hireath
 
         public override void OnUpdate(ref Context context)
         {
-            cube.Get<Transform>().Rotation = new Vector3((context.Time.Total * MathF.PI * 10) % 360f);
+            cube.Get<Transform>().Rotation = new Vector3(context.Time.Total * MathF.PI * 10 % 360f);
         }
     }
 
@@ -69,7 +65,7 @@ namespace Hireath
     {
         public static void Main(string[] args)
         {
-            var game = TrialogueEngine.Create<Hireath>(new WindowOptions()
+            var game = TrialogueEngine.Create<Hireath>(new WindowOptions
             {
                 TopMost = true,
                 StartCentered = false,
@@ -79,7 +75,7 @@ namespace Hireath
                 Size = new Size(1000, 800),
                 SampleSize = 4,
                 Resizable = true,
-                VSync = true,
+                VSync = true
             });
             game.Run();
         }

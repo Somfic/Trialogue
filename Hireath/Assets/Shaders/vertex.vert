@@ -35,7 +35,7 @@ void main()
     vec4 viewPosition = View * worldPosition;
     vec4 clipPosition = Projection * viewPosition;
     gl_Position = clipPosition;
-    
+
     fsin_Normal = Normal;
     fsin_Position = Position;
     fsin_Color = vec4(CameraPosition, 1);

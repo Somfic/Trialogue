@@ -6,7 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Assimp;
 using Veldrid;
-using Matrix4x4 = Assimp.Matrix4x4;
+using Matrix4x4 = System.Numerics.Matrix4x4;
 
 namespace Trialogue.Importer
 {
@@ -15,20 +15,22 @@ namespace Trialogue.Importer
         Flat,
         Smooth
     }
-    
+
     public class AssimpProcessor : BinaryAssetProcessor<ProcessedModel>
     {
         public override unsafe ProcessedModel ProcessT(Stream stream, string extension, Shading shadingMode)
         {
-            var normalsStep = shadingMode == Shading.Smooth ? PostProcessSteps.GenerateSmoothNormals : PostProcessSteps.GenerateNormals;
-            
+            var normalsStep = shadingMode == Shading.Smooth
+                ? PostProcessSteps.GenerateSmoothNormals
+                : PostProcessSteps.GenerateNormals;
+
             var ac = new AssimpContext();
             var scene = ac.ImportFileFromStream(
                 stream, normalsStep
-                        | PostProcessSteps.FlipWindingOrder 
+                        | PostProcessSteps.FlipWindingOrder
                         | PostProcessSteps.FlipUVs
-                        | PostProcessSteps.FixInFacingNormals 
-                        | PostProcessSteps.Triangulate 
+                        | PostProcessSteps.FixInFacingNormals
+                        | PostProcessSteps.Triangulate
                         | PostProcessSteps.JoinIdenticalVertices
                         // | PostProcessSteps.OptimizeMeshes
                         // | PostProcessSteps.OptimizeGraph
@@ -45,16 +47,14 @@ namespace Trialogue.Importer
             {
                 var mesh = scene.Meshes[meshIndex];
                 var meshName = mesh.Name;
-                if (string.IsNullOrEmpty(meshName))
-                {
-                    meshName = $"mesh_{meshIndex}";
-                }
+                if (string.IsNullOrEmpty(meshName)) meshName = $"mesh_{meshIndex}";
                 var counter = 1;
                 while (!encounteredNames.Add(meshName))
                 {
-                    meshName = mesh.Name + "_" + counter.ToString();
+                    meshName = mesh.Name + "_" + counter;
                     counter += 1;
                 }
+
                 var vertexCount = mesh.VertexCount;
 
                 var positionOffset = 0;
@@ -64,22 +64,27 @@ namespace Trialogue.Importer
                 var boneIndicesOffset = -1;
 
                 var elementDescs = new List<VertexElementDescription>();
-                elementDescs.Add(new VertexElementDescription("Position", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float3));
-                elementDescs.Add(new VertexElementDescription("Normal", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float3));
+                elementDescs.Add(new VertexElementDescription("Position", VertexElementSemantic.TextureCoordinate,
+                    VertexElementFormat.Float3));
+                elementDescs.Add(new VertexElementDescription("Normal", VertexElementSemantic.TextureCoordinate,
+                    VertexElementFormat.Float3));
                 normalOffset = 12;
 
                 var vertexSize = 24;
 
                 var hasTexCoords = mesh.HasTextureCoords(0);
-                elementDescs.Add(new VertexElementDescription("TexCoords", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float2));
+                elementDescs.Add(new VertexElementDescription("TexCoords", VertexElementSemantic.TextureCoordinate,
+                    VertexElementFormat.Float2));
                 texCoordsOffset = vertexSize;
                 vertexSize += 8;
 
                 var hasBones = mesh.HasBones;
                 if (hasBones)
                 {
-                    elementDescs.Add(new VertexElementDescription("BoneWeights", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float4));
-                    elementDescs.Add(new VertexElementDescription("BoneIndices", VertexElementSemantic.TextureCoordinate, VertexElementFormat.UInt4));
+                    elementDescs.Add(new VertexElementDescription("BoneWeights",
+                        VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float4));
+                    elementDescs.Add(new VertexElementDescription("BoneIndices",
+                        VertexElementSemantic.TextureCoordinate, VertexElementFormat.UInt4));
 
                     boneWeightOffset = vertexSize;
                     vertexSize += 16;
@@ -108,69 +113,68 @@ namespace Trialogue.Importer
                     builder.WriteVertexElement(i, normalOffset, normal);
 
                     if (mesh.HasTextureCoords(0))
-                    {
                         builder.WriteVertexElement(
                             i,
                             texCoordsOffset,
-                            new Vector2(mesh.TextureCoordinateChannels[0][i].X, mesh.TextureCoordinateChannels[0][i].Y));
-                    }
+                            new Vector2(mesh.TextureCoordinateChannels[0][i].X,
+                                mesh.TextureCoordinateChannels[0][i].Y));
                     else
-                    {
                         builder.WriteVertexElement(
                             i,
                             texCoordsOffset,
                             new Vector2());
-                    }
                 }
 
                 var indices = new List<int>();
                 foreach (var face in mesh.Faces)
-                {
                     if (face.IndexCount == 3)
                     {
                         indices.Add(face.Indices[0]);
                         indices.Add(face.Indices[1]);
                         indices.Add(face.Indices[2]);
                     }
-                }
 
                 var boneIDsByName = new Dictionary<string, uint>();
-                var boneOffsets = new System.Numerics.Matrix4x4[mesh.BoneCount];
+                var boneOffsets = new Matrix4x4[mesh.BoneCount];
 
                 if (hasBones)
                 {
                     var assignedBoneWeights = new Dictionary<int, int>();
                     for (uint boneID = 0; boneID < mesh.BoneCount; boneID++)
                     {
-                        var bone = mesh.Bones[(int)boneID];
+                        var bone = mesh.Bones[(int) boneID];
                         var boneName = bone.Name;
                         var suffix = 1;
                         while (boneIDsByName.ContainsKey(boneName))
                         {
-                            boneName = bone.Name + "_" + suffix.ToString();
+                            boneName = bone.Name + "_" + suffix;
                             suffix += 1;
                         }
 
                         boneIDsByName.Add(boneName, boneID);
                         foreach (var weight in bone.VertexWeights)
                         {
-                            var relativeBoneIndex = GetAndIncrementRelativeBoneIndex(assignedBoneWeights, weight.VertexID);
-                            builder.WriteVertexElement(weight.VertexID, boneIndicesOffset + (relativeBoneIndex * sizeof(uint)), boneID);
-                            builder.WriteVertexElement(weight.VertexID, boneWeightOffset + (relativeBoneIndex * sizeof(float)), weight.Weight);
+                            var relativeBoneIndex =
+                                GetAndIncrementRelativeBoneIndex(assignedBoneWeights, weight.VertexID);
+                            builder.WriteVertexElement(weight.VertexID,
+                                boneIndicesOffset + relativeBoneIndex * sizeof(uint), boneID);
+                            builder.WriteVertexElement(weight.VertexID,
+                                boneWeightOffset + relativeBoneIndex * sizeof(float), weight.Weight);
                         }
 
                         var offsetMat = bone.OffsetMatrix.ToSystemMatrixTransposed();
-                        System.Numerics.Matrix4x4.Decompose(offsetMat, out var scale, out var rot, out var trans);
-                        offsetMat = System.Numerics.Matrix4x4.CreateScale(scale)
-                                    * System.Numerics.Matrix4x4.CreateFromQuaternion(rot)
-                                    * System.Numerics.Matrix4x4.CreateTranslation(trans);
+                        Matrix4x4.Decompose(offsetMat, out var scale, out var rot, out var trans);
+                        offsetMat = Matrix4x4.CreateScale(scale)
+                                    * Matrix4x4.CreateFromQuaternion(rot)
+                                    * Matrix4x4.CreateTranslation(trans);
 
                         boneOffsets[boneID] = offsetMat;
                     }
                 }
+
                 builder.FreeGCHandle();
 
-                var indexCount = (uint)indices.Count;
+                var indexCount = (uint) indices.Count;
 
                 var int32Indices = indices.ToArray();
                 var indexData = new byte[indices.Count * sizeof(uint)];
@@ -188,7 +192,7 @@ namespace Trialogue.Importer
                     elementDescs.ToArray(),
                     indexData,
                     IndexFormat.UInt32,
-                    (uint)indices.Count,
+                    (uint) indices.Count,
                     boneIDsByName,
                     boneOffsets);
                 parts.Add(part);
@@ -212,10 +216,7 @@ namespace Trialogue.Importer
                 }
 
                 var baseAnimName = animation.Name;
-                if (string.IsNullOrEmpty(baseAnimName))
-                {
-                    baseAnimName = "anim_" + animIndex;
-                }
+                if (string.IsNullOrEmpty(baseAnimName)) baseAnimName = "anim_" + animIndex;
 
                 var animationName = baseAnimName;
 
@@ -223,12 +224,12 @@ namespace Trialogue.Importer
                 var counter = 1;
                 while (!encounteredNames.Add(animationName))
                 {
-                    animationName = baseAnimName + "_" + counter.ToString();
+                    animationName = baseAnimName + "_" + counter;
                     counter += 1;
                 }
             }
 
-            return new ProcessedModel()
+            return new ProcessedModel
             {
                 MeshParts = parts.ToArray(),
                 Animations = animations.ToArray(),
@@ -291,25 +292,25 @@ namespace Trialogue.Importer
         private unsafe struct VertexDataBuilder
         {
             private readonly GCHandle _gch;
-            private readonly unsafe byte* _dataPtr;
+            private readonly byte* _dataPtr;
             private readonly int _vertexSize;
 
             public VertexDataBuilder(byte[] data, int vertexSize)
             {
                 _gch = GCHandle.Alloc(data, GCHandleType.Pinned);
-                _dataPtr = (byte*)_gch.AddrOfPinnedObject();
+                _dataPtr = (byte*) _gch.AddrOfPinnedObject();
                 _vertexSize = vertexSize;
             }
 
             public void WriteVertexElement<T>(int vertex, int elementOffset, ref T data)
             {
-                var dst = _dataPtr + (_vertexSize * vertex) + elementOffset;
+                var dst = _dataPtr + _vertexSize * vertex + elementOffset;
                 Unsafe.Copy(dst, ref data);
             }
 
             public void WriteVertexElement<T>(int vertex, int elementOffset, T data)
             {
-                var dst = _dataPtr + (_vertexSize * vertex) + elementOffset;
+                var dst = _dataPtr + _vertexSize * vertex + elementOffset;
                 Unsafe.Copy(dst, ref data);
             }
 

@@ -33,6 +33,8 @@ namespace Trialogue.Components
             FarPlane = Math.Max(FarPlane, NearPlane + 0.001f);
 
             Cone = MathF.Max(0.1f, MathF.Min(Cone, 100));
+            
+            FieldOfView = MathF.Max(1, MathF.Min(FieldOfView, 179));
 
             var proj = IsOrthographic
                 ? Matrix4x4.CreateOrthographic(Cone, Cone * context.Window.Size.Height / context.Window.Size.Width,

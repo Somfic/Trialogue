@@ -78,7 +78,7 @@ void main()
         vec3 L = normalize(lightPos - fsin_worldPos);
         vec3 H = normalize(V + L);
         float distance    = length(lightPos - fsin_worldPos);
-        float attenuation = lightStrength[i] / (distance * distance);
+        float attenuation = lightStrength[i] / min((distance * distance), 1.0);	
         vec3 radiance     = lightColor[i] * attenuation;        
             
         // cook-torrance brdf

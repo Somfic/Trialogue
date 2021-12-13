@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Numerics;
 using Microsoft.Extensions.Logging;
 using Trialogue.Components;
 using Trialogue.Ecs;
@@ -22,7 +23,13 @@ namespace Trialogue.Systems.Rendering
         private ResourceLayout _cameraSetLayout;
         private ResourceLayout _materialLayout;
         private ResourceLayout _worldLayout;
+
+
+        private ResourceSet _lightSet;
         private ResourceLayout _lightLayout;
+        private DeviceBuffer _amountOfLightsBuffer;
+        private DeviceBuffer _lightPositionsBuffer;
+        private DeviceBuffer _lightColorsBuffer;
 
         private VertexLayoutDescription _sharedVertexLayout;
 
@@ -35,12 +42,6 @@ namespace Trialogue.Systems.Rendering
         {
             var graphicsDevice = context.Window.GraphicsDevice;
             var resourceFactory = graphicsDevice.ResourceFactory;
-
-            var amountOfObjects = _filter.GetEntitiesCount();
-            var amountOfLights = _lights.GetEntitiesCount();
-
-            _log.LogInformation($"Found {amountOfObjects} {(amountOfObjects != 1 ? "objects" : "object")} to render.");
-            _log.LogInformation($"Found {amountOfLights} {(amountOfLights != 1 ? "lights" : "light")} to render.");
 
             _sharedVertexLayout = new VertexLayoutDescription(
                 new VertexElementDescription("Position", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float3),
@@ -71,7 +72,9 @@ namespace Trialogue.Systems.Rendering
             // Set 3
             _lightLayout = resourceFactory.CreateResourceLayout(
                 new ResourceLayoutDescription(
-                    new ResourceLayoutElementDescription("LightBuffer", ResourceKind.UniformBuffer, ShaderStages.Fragment)));
+                    new ResourceLayoutElementDescription("AmountOfLightsBuffer", ResourceKind.UniformBuffer, ShaderStages.Fragment),
+                    new ResourceLayoutElementDescription("LightPositionsBuffer", ResourceKind.UniformBuffer, ShaderStages.Fragment),
+                    new ResourceLayoutElementDescription("LightColorsBuffer", ResourceKind.UniformBuffer, ShaderStages.Fragment)));
         }
 
         public void OnRender(ref Context context)
@@ -95,6 +98,19 @@ namespace Trialogue.Systems.Rendering
             var projectionMatrix = camera.CalculateProjectionMatrix(ref context);
             var viewMatrix = camera.CalculateViewMatrix(ref cameraTransform);
 
+            int amountOfLights = _lights.GetEntitiesCount();
+
+            Vector3[] lightPositions = new Vector3[128];
+            Vector3[] lightColors = new Vector3[128];
+
+            foreach (var i in _lights) {
+                ref var light = ref _lights.Get1(i);
+                ref var lightTransform = ref _lights.Get2(i);
+
+                lightPositions[i] = lightTransform.Position;
+                lightColors[i] = light.Color;
+            }
+
             foreach (var i in _filter)
             {
                 ref var model = ref _filter.Get1(i);
@@ -117,6 +133,10 @@ namespace Trialogue.Systems.Rendering
                 commandList.UpdateBuffer(material.RoughnessBuffer, 0, ref material.Roughness);
                 commandList.UpdateBuffer(material.AmbientOcclusionBuffer, 0, ref material.AmbientOcclusion);
 
+                commandList.UpdateBuffer(_amountOfLightsBuffer, 0, ref amountOfLights);
+                commandList.UpdateBuffer(_lightPositionsBuffer, 0, lightPositions);
+                commandList.UpdateBuffer(_lightColorsBuffer, 0, lightColors);
+
                 commandList.SetPipeline(renderer.PipeLine);
 
                 foreach (var modelResource in model.Resources)
@@ -127,6 +147,7 @@ namespace Trialogue.Systems.Rendering
                     commandList.SetGraphicsResourceSet(0, camera.ResourceSet);
                     commandList.SetGraphicsResourceSet(1, transform.WorldSet);
                     commandList.SetGraphicsResourceSet(2, material.MaterialSet);
+                    commandList.SetGraphicsResourceSet(3, _lightSet);
 
                     commandList.DrawIndexed(modelResource.IndexCount, 1, 0, 0, 0);
                 }
@@ -166,6 +187,11 @@ namespace Trialogue.Systems.Rendering
             camera.ViewBuffer ??= resourceFactory.CreateBuffer(new BufferDescription(64, BufferUsage.UniformBuffer));
             camera.PositionBuffer ??= resourceFactory.CreateBuffer(new BufferDescription(64, BufferUsage.UniformBuffer));
 
+            // Lights
+            _amountOfLightsBuffer ??= resourceFactory.CreateBuffer(new BufferDescription(64, BufferUsage.UniformBuffer));
+            _lightPositionsBuffer ??= resourceFactory.CreateBuffer(new BufferDescription(2048, BufferUsage.UniformBuffer));
+            _lightColorsBuffer ??= resourceFactory.CreateBuffer(new BufferDescription(2048, BufferUsage.UniformBuffer));
+
             foreach (var i in _filter)
             {
                 ref var model = ref _filter.Get1(i);
@@ -196,13 +222,13 @@ namespace Trialogue.Systems.Rendering
 
                 // Renderer
                 if (renderer.PipeLine == null || transform.WorldSet == null || camera.ResourceSet == null ||
-                    material.MaterialSet == null)
+                    material.MaterialSet == null || _lightSet == null)
                 {
                     var pipelineDescription = new GraphicsPipelineDescription
                     {
                         BlendState = BlendStateDescription.SingleOverrideBlend,
                         PrimitiveTopology = PrimitiveTopology.TriangleList,
-                        ResourceLayouts = new[] {_cameraSetLayout, _worldLayout, _materialLayout},
+                        ResourceLayouts = new[] {_cameraSetLayout, _worldLayout, _materialLayout, _lightLayout},
 
                         DepthStencilState = new DepthStencilStateDescription
                         {
@@ -242,6 +268,13 @@ namespace Trialogue.Systems.Rendering
                         camera.ProjectionBuffer,
                         camera.ViewBuffer,
                         camera.PositionBuffer));
+
+                    _lightSet ??= resourceFactory.CreateResourceSet(new ResourceSetDescription(
+                        _lightLayout,
+                        _amountOfLightsBuffer,
+                        _lightPositionsBuffer,
+                        _lightColorsBuffer
+                    ));
                 }
             }
         }

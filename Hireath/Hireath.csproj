@@ -7,7 +7,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Trialogue\Trialogue.csproj"/>
+        <ProjectReference Include="..\Trialogue\Trialogue.csproj" />
     </ItemGroup>
 
     <ItemGroup>
@@ -35,7 +35,28 @@
         <None Update="Assets\Models\pot.obj">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
-        <None Remove="imgui.ini"/>
+        <None Update="Assets\Models\sphere.obj">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+        <None Remove="imgui.ini" />
+        <None Update="Assets\Models\Backpack\1001_albedo.jpg">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Assets\Models\Backpack\1001_AO.jpg">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Assets\Models\Backpack\1001_metallic.jpg">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Assets\Models\Backpack\1001_normal.png">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Assets\Models\Backpack\1001_roughness.jpg">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Assets\Models\Backpack\Survival_BackPack_2.fbx">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 
 </Project>

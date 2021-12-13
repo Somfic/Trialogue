@@ -139,6 +139,7 @@ namespace Trialogue.Systems.Rendering.Ui
                         ImGui.BeginGroup();
                         component.DrawUi(ref _selectedEntity);
                         ImGui.EndGroup();
+                        ImGui.NewLine();
                     }
 
                     ImGui.PopID();

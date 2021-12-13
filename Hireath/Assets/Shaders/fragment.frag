@@ -1,36 +1,103 @@
 ﻿#version 450
 
-layout(location = 0) in vec4 fsin_Color;
-layout(location = 1) in vec3 fsin_Normal;
-layout(location = 2) in vec3 fsin_Position;
-layout(location = 3) in vec3 fsin_CameraPosition;
-
 layout(location = 0) out vec4 fsout_Color;
+
+layout(location = 0) in vec2 fsin_texCoords;
+layout(location = 1) in vec3 fsin_worldPos;
+layout(location = 2) in vec3 fsin_normal;
+
+layout(set = 0, binding = 2) uniform PositionBuffer { vec3 cameraPosition; };
+
+layout(set = 2, binding = 0) uniform AlbedoBuffer { vec3 albedo; };
+layout(set = 2, binding = 1) uniform MetallicBuffer { float metallic; };
+layout(set = 2, binding = 2) uniform RoughnessBuffer { float roughness; };
+layout(set = 2, binding = 3) uniform AmbientOcclusionBuffer { float ambientOcclusion; };
+
+float PI = 3.1415926535897932384626433832795;
+
+float DistributionGGX(vec3 N, vec3 H, float roughness)
+{
+    float a      = roughness*roughness;
+    float a2     = a*a;
+    float NdotH  = max(dot(N, H), 0.0);
+    float NdotH2 = NdotH*NdotH;
+	
+    float num   = a2;
+    float denom = (NdotH2 * (a2 - 1.0) + 1.0);
+    denom = PI * denom * denom;
+	
+    return num / denom;
+}
+
+float GeometrySchlickGGX(float NdotV, float roughness)
+{
+    float r = (roughness + 1.0);
+    float k = (r*r) / 8.0;
+
+    float num   = NdotV;
+    float denom = NdotV * (1.0 - k) + k;
+	
+    return num / denom;
+}
+
+float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
+{
+    float NdotV = max(dot(N, V), 0.0);
+    float NdotL = max(dot(N, L), 0.0);
+    float ggx2  = GeometrySchlickGGX(NdotV, roughness);
+    float ggx1  = GeometrySchlickGGX(NdotL, roughness);
+	
+    return ggx1 * ggx2;
+}
+
+vec3 fresnelSchlick(float cosTheta, vec3 F0)
+{
+    return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+} 
 
 void main()
 {
-    vec3 lightPos = vec3(100, 0, -100);
-    vec3 lightColor = vec3(1, 1, 1);
-    vec3 objectColor = vec3(1, 1, 1);
+    fsout_Color = vec4(albedo, 1.0);    
 
-    float specularStrength = 0.5;
+    vec3 N = normalize(fsin_normal); 
+    vec3 V = normalize(cameraPosition - fsin_worldPos);
 
-    // ambient
-    float ambientStrength = 0.1;
-    vec3 ambient = ambientStrength * lightColor;
+    vec3 F0 = vec3(0.04); 
+    F0 = mix(F0, albedo, metallic);
 
-    // diffuse 
-    vec3 norm = normalize(fsin_Normal);
-    vec3 lightDir = normalize(lightPos - fsin_Position);
-    float diff = max(dot(norm, lightDir), 0.0);
-    vec3 diffuse = diff * lightColor;
+    vec3 Lo = vec3(0.0);
 
-    // specular
-    vec3 viewDir = normalize(fsin_CameraPosition - fsin_Position);
-    vec3 reflectDir = reflect(-lightDir, norm);
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 256);
-    vec3 specular = specularStrength * spec * lightColor;
+    vec3 lightPos = vec3(0.0, 0.0, -10.0);
 
-    vec3 result = (ambient + diffuse + specular) * objectColor;
-    fsout_Color = vec4(result, 1.0);
+     // calculate per-light radiance
+    vec3 L = normalize(lightPos - fsin_worldPos);
+    vec3 H = normalize(V + L);
+    float distance    = length(lightPos - fsin_worldPos);
+    float attenuation = 1.0 / (distance * distance);
+    vec3 radiance     = vec3(1) * attenuation;        
+        
+    // cook-torrance brdf
+    float NDF = DistributionGGX(N, H, roughness);        
+    float G   = GeometrySmith(N, V, L, roughness);      
+    vec3 F    = fresnelSchlick(max(dot(H, V), 0.0), F0);       
+        
+    vec3 kS = F;
+    vec3 kD = vec3(1.0) - kS;
+    kD *= 1.0 - metallic;	  
+        
+    vec3 numerator    = NDF * G * F;
+    float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001;
+    vec3 specular     = numerator / denominator;  
+            
+    // add to outgoing radiance Lo
+    float NdotL = max(dot(N, L), 0.0);                
+    Lo += (kD * albedo / PI + specular) * radiance * NdotL; 
+
+    vec3 ambient = vec3(0.03) * albedo * ambientOcclusion;
+    vec3 color = ambient + Lo;
+	
+    color = color / (color + vec3(1.0));
+    color = pow(color, vec3(1.0/2.2));  
+   
+    fsout_Color = vec4(color, 1.0);
 }

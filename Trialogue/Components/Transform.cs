@@ -13,10 +13,10 @@ namespace Trialogue.Components
         public Vector3 Scale;
         public Vector3 Rotation;
 
-        public DeviceBuffer WorldBuffer;
+        public DeviceBuffer ModelBuffer;
         public ResourceSet WorldSet;
 
-        internal Matrix4x4 CalculateWorldMatrix(ref Context context)
+        internal Matrix4x4 CalculateModelMatrix(ref Context context)
         {
             var transform = Matrix4x4.CreateTranslation(Position);
 

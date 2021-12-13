@@ -47,18 +47,13 @@ namespace Hireath
             ref var renderer = ref _cube.Get<Renderer>();
             ref var transform = ref _cube.Get<Transform>();
 
-            model.SetModel("Models/keyboard.obj");
+            model.SetModel("Models/sphere.obj", Trialogue.Importer.Shading.Smooth);
 
             transform.Scale = Vector3.One;
 
-            material.SetShaders(
-                Material.Shader.FromFile("Shaders/vertex.vert"),
-                Material.Shader.FromFile("Shaders/fragment.frag"));
-        }
-
-        public override void OnUpdate(ref Context context)
-        {
-            _cube.Get<Transform>().Rotation = new Vector3(context.Time.Total * MathF.PI * 10 % 360f);
+            material.SetShaders(Shader.FromFile("Shaders/vertex.vert"), Shader.FromFile("Shaders/fragment.frag"));
+            material.AmbientOcclusion = 1;
+            material.Albedo = new Vector3(1, 0, 0);
         }
     }
 

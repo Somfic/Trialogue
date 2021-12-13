@@ -130,6 +130,7 @@ namespace Trialogue.Systems.Rendering.Ui
                             _log.LogInformation("Deleting {Component} from {Entity}", component.GetType().Name, _selectedEntity.Get<ComponentInfo>().EntityName);
 
                             deleteGenericMethod.Invoke(_selectedEntity, Array.Empty<object>());
+                            continue;
                         }
                     }
                     

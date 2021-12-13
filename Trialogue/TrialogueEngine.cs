@@ -131,7 +131,6 @@ namespace Trialogue
 
                 commandList.Begin();
                 commandList.SetFramebuffer(graphicsDevice.MainSwapchain.Framebuffer);
-                commandList.ClearColorTarget(0, RgbaFloat.Black);
                 commandList.ClearDepthStencil(1f);
 
                 window.OnRender(ref context);

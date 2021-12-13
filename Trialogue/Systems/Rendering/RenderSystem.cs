@@ -9,7 +9,7 @@ using Veldrid.SPIRV;
 
 namespace Trialogue.Systems.Rendering
 {
-    public class RenderSystem : IEcsStartSystem, IEcsRenderSystem, IEcsDestroySystem
+    public class RenderSystem : IEcsStartSystem, IEcsUpdateSystem, IEcsRenderSystem, IEcsDestroySystem
     {
         private readonly ILogger<RenderSystem> _log;
         private EcsFilter<Camera, Transform> _cameraFilter;
@@ -52,7 +52,15 @@ namespace Trialogue.Systems.Rendering
         {
             CreateResources(ref context);
             
-            if (_cameraFilter.IsEmpty()) throw new Exception("No camera entity found");
+            var graphicsDevice = context.Window.GraphicsDevice;
+            var resourceFactory = graphicsDevice.ResourceFactory;
+            var commandList = context.Window.CommandList;
+
+            if (_cameraFilter.IsEmpty())
+            {
+                commandList.ClearColorTarget(0, RgbaFloat.Blue);
+                return;
+            }
 
             ref var cameraEntity = ref _cameraFilter.GetEntity(0);
             ref var camera = ref cameraEntity.Get<Camera>();
@@ -60,10 +68,6 @@ namespace Trialogue.Systems.Rendering
 
             var projectionMatrix = camera.CalculateProjectionMatrix(ref context);
             var viewMatrix = camera.CalculateViewMatrix(ref cameraTransform);
-
-            var graphicsDevice = context.Window.GraphicsDevice;
-            var resourceFactory = graphicsDevice.ResourceFactory;
-            var commandList = context.Window.CommandList;
 
             foreach (var i in _filter)
             {
@@ -74,6 +78,8 @@ namespace Trialogue.Systems.Rendering
 
                 var worldMatrix = transform.CalculateWorldMatrix(ref context);
 
+                commandList.ClearColorTarget(0, RgbaFloat.Black);
+                
                 commandList.UpdateBuffer(camera.ProjectionBuffer, 0, ref projectionMatrix);
                 commandList.UpdateBuffer(camera.ViewBuffer, 0, ref viewMatrix);
                 commandList.UpdateBuffer(camera.PositionBuffer, 0, ref cameraTransform.Position);
@@ -113,7 +119,10 @@ namespace Trialogue.Systems.Rendering
             var graphicsDevice = context.Window.GraphicsDevice;
             var resourceFactory = graphicsDevice.ResourceFactory;
 
-            if (_cameraFilter.IsEmpty()) throw new Exception("No camera entity found");
+            if (_cameraFilter.IsEmpty())
+            {
+                return;
+            }
 
             ref var cameraEntity = ref _cameraFilter.GetEntity(0);
             ref var camera = ref cameraEntity.Get<Camera>();
@@ -194,6 +203,11 @@ namespace Trialogue.Systems.Rendering
                         camera.PositionBuffer));
                 }
             }
+        }
+
+        public void OnUpdate(ref Context context)
+        {
+            
         }
     }
 }

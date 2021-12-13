@@ -16,6 +16,7 @@ layout(set = 2, binding = 3) uniform AmbientOcclusionBuffer { float ambientOcclu
 layout(set = 3, binding = 0) uniform AmountOfLightsBuffer { int amountOfLights; };
 layout(set = 3, binding = 1) uniform LightPositionsBuffer { vec3 lightPosition[128]; };
 layout(set = 3, binding = 2) uniform LightColorsBuffer { vec3 lightColor[128]; };
+layout(set = 3, binding = 3) uniform LightStrengthsBuffer { float lightStrength[128]; };
 
 float PI = 3.1415926535897932384626433832795;
 
@@ -77,7 +78,7 @@ void main()
         vec3 L = normalize(lightPos - fsin_worldPos);
         vec3 H = normalize(V + L);
         float distance    = length(lightPos - fsin_worldPos);
-        float attenuation = 1.0 / (distance * distance);
+        float attenuation = lightStrength[i] / (distance * distance);
         vec3 radiance     = lightColor[i] * attenuation;        
             
         // cook-torrance brdf

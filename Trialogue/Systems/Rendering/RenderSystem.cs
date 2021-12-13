@@ -30,6 +30,7 @@ namespace Trialogue.Systems.Rendering
         private DeviceBuffer _amountOfLightsBuffer;
         private DeviceBuffer _lightPositionsBuffer;
         private DeviceBuffer _lightColorsBuffer;
+        private DeviceBuffer _lightStrengthsBuffer;
 
         private VertexLayoutDescription _sharedVertexLayout;
 
@@ -74,7 +75,9 @@ namespace Trialogue.Systems.Rendering
                 new ResourceLayoutDescription(
                     new ResourceLayoutElementDescription("AmountOfLightsBuffer", ResourceKind.UniformBuffer, ShaderStages.Fragment),
                     new ResourceLayoutElementDescription("LightPositionsBuffer", ResourceKind.UniformBuffer, ShaderStages.Fragment),
-                    new ResourceLayoutElementDescription("LightColorsBuffer", ResourceKind.UniformBuffer, ShaderStages.Fragment)));
+                    new ResourceLayoutElementDescription("LightColorsBuffer", ResourceKind.UniformBuffer, ShaderStages.Fragment),
+                    new ResourceLayoutElementDescription("LightStrengthsBuffer", ResourceKind.UniformBuffer, ShaderStages.Fragment)
+                ));
         }
 
         public void OnRender(ref Context context)
@@ -102,6 +105,7 @@ namespace Trialogue.Systems.Rendering
 
             Vector3[] lightPositions = new Vector3[128];
             Vector3[] lightColors = new Vector3[128];
+            float[] lightStrengths = new float[128];
 
             foreach (var i in _lights) {
                 ref var light = ref _lights.Get1(i);
@@ -109,6 +113,7 @@ namespace Trialogue.Systems.Rendering
 
                 lightPositions[i] = lightTransform.Position;
                 lightColors[i] = light.Color;
+                lightStrengths[i] = light.Strength;
             }
 
             foreach (var i in _filter)
@@ -136,6 +141,7 @@ namespace Trialogue.Systems.Rendering
                 commandList.UpdateBuffer(_amountOfLightsBuffer, 0, ref amountOfLights);
                 commandList.UpdateBuffer(_lightPositionsBuffer, 0, lightPositions);
                 commandList.UpdateBuffer(_lightColorsBuffer, 0, lightColors);
+                commandList.UpdateBuffer(_lightStrengthsBuffer, 0, lightStrengths);
 
                 commandList.SetPipeline(renderer.PipeLine);
 
@@ -191,6 +197,7 @@ namespace Trialogue.Systems.Rendering
             _amountOfLightsBuffer ??= resourceFactory.CreateBuffer(new BufferDescription(64, BufferUsage.UniformBuffer));
             _lightPositionsBuffer ??= resourceFactory.CreateBuffer(new BufferDescription(2048, BufferUsage.UniformBuffer));
             _lightColorsBuffer ??= resourceFactory.CreateBuffer(new BufferDescription(2048, BufferUsage.UniformBuffer));
+            _lightStrengthsBuffer ??= resourceFactory.CreateBuffer(new BufferDescription(2048, BufferUsage.UniformBuffer));
 
             foreach (var i in _filter)
             {
@@ -268,12 +275,13 @@ namespace Trialogue.Systems.Rendering
                         camera.ProjectionBuffer,
                         camera.ViewBuffer,
                         camera.PositionBuffer));
-
+ 
                     _lightSet ??= resourceFactory.CreateResourceSet(new ResourceSetDescription(
                         _lightLayout,
                         _amountOfLightsBuffer,
                         _lightPositionsBuffer,
-                        _lightColorsBuffer
+                        _lightColorsBuffer,
+                        _lightStrengthsBuffer
                     ));
                 }
             }

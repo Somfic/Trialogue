@@ -11,6 +11,8 @@ namespace Trialogue.Components
     {
         public LightType Type;
 
+        public float Strength;
+
         public Vector3 Color;
 
 
@@ -27,6 +29,8 @@ namespace Trialogue.Components
             }
 
             ImGui.ColorEdit3("Color", ref Color);
+
+            ImGui.SliderFloat("Strength", ref Strength, 1, 1000);
 
             ecsEntity.Update(this);
         }

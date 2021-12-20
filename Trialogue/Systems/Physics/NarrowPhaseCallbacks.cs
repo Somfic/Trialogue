@@ -1,44 +1,10 @@
-using System.Numerics;
 using BepuPhysics;
 using BepuPhysics.Collidables;
 using BepuPhysics.CollisionDetection;
 using BepuPhysics.Constraints;
-using BepuUtilities;
 
-namespace Trialogue.Systems
+namespace Trialogue.Systems.Physics
 {
-    internal struct PoseIntegratorCallbacks : IPoseIntegratorCallbacks
-    {
-        public Vector3 Gravity;
-
-        public PoseIntegratorCallbacks(Vector3 gravity) : this()
-        {
-            Gravity = gravity;
-        }
-
-        Vector3Wide gravityWideDt;
-
-        public void Initialize(Simulation simulation)
-        {
-        }
-
-        public void PrepareForIntegration(float dt)
-        {
-            gravityWideDt = Vector3Wide.Broadcast(Gravity * dt);
-        }
-
-        public void IntegrateVelocity(Vector<int> bodyIndices, Vector3Wide position, QuaternionWide orientation,
-            BodyInertiaWide localInertia, Vector<int> integrationMask, int workerIndex, Vector<float> dt,
-            ref BodyVelocityWide velocity)
-        {
-            velocity.Linear += gravityWideDt;
-        }
-
-        public AngularIntegrationMode AngularIntegrationMode => AngularIntegrationMode.Nonconserving;
-        public bool AllowSubstepsForUnconstrainedBodies => false;
-        public bool IntegrateVelocityForKinematics => false;
-    }
-
     internal struct NarrowPhaseCallbacks : INarrowPhaseCallbacks
     {
         public void Initialize(Simulation simulation)

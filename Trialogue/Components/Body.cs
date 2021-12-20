@@ -8,13 +8,23 @@ namespace Trialogue.Components
     public struct Body : IEcsComponent
     {
         public IShape Shape;
-
-        public bool IsStatic;
-
+        
         [Range(0, 1000)]
         public float Mass;
 
-        public BodyReference Info;
+        internal BodyHandle Handle;
+
+        public void Dispose()
+        {
+            
+        }
+    }
+    
+    public struct Static : IEcsComponent
+    {
+        public IShape Shape;
+
+        internal StaticHandle Handle;
 
         public void Dispose()
         {

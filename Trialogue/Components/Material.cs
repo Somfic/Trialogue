@@ -4,6 +4,7 @@ using System.Linq;
 using System.Numerics;
 using System.Text;
 using ImGuiNET;
+using System.ComponentModel.DataAnnotations;
 using Trialogue.Ecs;
 using Trialogue.Systems.Rendering.Ui;
 using Veldrid;
@@ -21,9 +22,13 @@ namespace Trialogue.Components
         [Color]
         public Vector3 Albedo;
 
+        [Range(0, 1)]
         public float Metallic;
 
+        [Range(0, 1)]
         public float Roughness;
+
+        [Range(0, 1)]
         public float AmbientOcclusion;
         
         internal DeviceBuffer AlbedoBuffer;

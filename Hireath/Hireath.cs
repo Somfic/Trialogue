@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Drawing;
 using System.Numerics;
+using BepuPhysics.Collidables;
 using Microsoft.Extensions.Logging;
 using Trialogue;
 using Trialogue.Components;
 using Trialogue.Ecs;
 using Trialogue.Systems;
+using Trialogue.Systems.Physics;
 using Trialogue.Systems.Rendering;
 using Trialogue.Systems.Rendering.Ui;
 using Trialogue.Window;
@@ -17,7 +19,8 @@ namespace Hireath
         private readonly ILogger<Hireath> _log;
 
         private EcsEntity _camera;
-        private EcsEntity _cube;
+        private EcsEntity _cow;
+        private EcsEntity _floor;
 
         public Hireath(ILogger<Hireath> log)
         {
@@ -42,26 +45,52 @@ namespace Hireath
 
             cameraTransform.Position = new Vector3(0, 0, 10);
 
-            _cube = CreateEntity("Square");
-            ref var model = ref _cube.Get<Model>();
-            ref var material = ref _cube.Get<Material>();
-            ref var renderer = ref _cube.Get<Renderer>();
-            ref var transform = ref _cube.Get<Transform>();
-
-            model.SetModel("Models/cow.obj", Trialogue.Importer.Shading.Smooth);
-
-            transform.Scale = Vector3.One;
-
-            material.SetShaders(Shader.FromFile("Shaders/vertex.vert"), Shader.FromFile("Shaders/fragment.frag"));
-            material.AmbientOcclusion = 1;
-            material.Albedo = new Vector3(1, 0, 0);
+            CreateCow();
+            CreateFloor();
         }
 
         public override void OnUpdate(ref Context context)
         {
             ref var camera = ref _camera.Get<Camera>();
             
-            camera.Target = _cube.Get<Transform>().Position;
+            // Follow the cow
+            camera.Target = _cow.Get<Transform>().Position;
+        }
+
+        void CreateCow()
+        {
+            _cow = CreateEntity("Cow");
+            ref var model = ref _cow.Get<Model>();
+            ref var material = ref _cow.Get<Material>();
+            ref var renderer = ref _cow.Get<Renderer>();
+            ref var transform = ref _cow.Get<Transform>();
+            ref var body = ref _cow.Get<Body>();
+            body.Shape = new Sphere(1);
+
+            model.SetModel("Models/cow.obj", Trialogue.Importer.Shading.Smooth);
+            transform.Scale = Vector3.One;
+            transform.Position = new Vector3(0, 10, 0);
+            material.SetShaders(Shader.FromFile("Shaders/vertex.vert"), Shader.FromFile("Shaders/fragment.frag"));
+            material.AmbientOcclusion = 1;
+            material.Albedo = new Vector3(1, 0, 0);
+        }
+
+        void CreateFloor()
+        {
+            _floor = CreateEntity("Floor");
+            ref var model = ref _floor.Get<Model>();
+            ref var material = ref _floor.Get<Material>();
+            //ref var renderer = ref _floor.Get<Renderer>();
+            ref var transform = ref _floor.Get<Transform>();
+            ref var body = ref _floor.Get<Static>();
+            body.Shape = new Box(10, 0.1f, 10);
+            
+            //model.SetModel("Models/floor.obj", Trialogue.Importer.Shading.Smooth);
+            transform.Scale = Vector3.One;
+            transform.Rotation = Quaternion.CreateFromAxisAngle(Vector3.UnitZ, MathF.PI / 5f);
+            material.SetShaders(Shader.FromFile("Shaders/vertex.vert"), Shader.FromFile("Shaders/fragment.frag"));
+            material.AmbientOcclusion = 1;
+            material.Albedo = new Vector3(1, 1, 1);
         }
     }
 

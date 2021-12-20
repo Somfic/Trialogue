@@ -1,20 +1,19 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
 using System.Text.RegularExpressions;
-using BepuPhysics.Collidables;
 using ImGuiNET;
 using Microsoft.Extensions.Logging;
 using Trialogue.Components;
 using Trialogue.Ecs;
+using Trialogue.Systems.Rendering.Ui;
 using Trialogue.Window;
 using Veldrid;
 
-namespace Trialogue.Systems.Rendering.Ui
+namespace Trialogue.Systems.Rendering
 {
     public class UiRenderSystem : IEcsStartSystem, IEcsUpdateSystem, IEcsRenderSystem, IEcsDestroySystem
     {
@@ -86,7 +85,7 @@ namespace Trialogue.Systems.Rendering.Ui
         private void BuildHierarchy(ref Context context)
         {
             ImGui.SetNextWindowPos(new Vector2(0, 0));
-            ImGui.SetNextWindowSize(new Vector2(250, context.Window.Size.Height));
+            ImGui.SetNextWindowSize(new Vector2(150, context.Window.Size.Height));
 
             ImGui.Begin("Hierarchy", ImGuiWindowFlags.NoCollapse);
             var style = ImGui.GetStyle();
@@ -120,8 +119,8 @@ namespace Trialogue.Systems.Rendering.Ui
 
         private void BuildInspector(ref Context context)
         {
-            ImGui.SetNextWindowPos(new Vector2(context.Window.Size.Width - 250, 0));
-            ImGui.SetNextWindowSize(new Vector2(250, context.Window.Size.Height));
+            ImGui.SetNextWindowPos(new Vector2(context.Window.Size.Width - 350, 0));
+            ImGui.SetNextWindowSize(new Vector2(350, context.Window.Size.Height));
 
             ImGui.Begin("Inspector", ImGuiWindowFlags.NoCollapse);
 

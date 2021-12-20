@@ -15,6 +15,7 @@
 
     <ItemGroup>
         <PackageReference Include="AssimpNet" Version="5.0.0-beta1" />
+        <PackageReference Include="BepuPhysics" Version="2.4.0-beta9" />
         <PackageReference Include="ImGui.NET" Version="1.78.0" />
         <PackageReference Include="ImGui.NET.Docking" Version="1.75.0" />
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="5.0.0" />

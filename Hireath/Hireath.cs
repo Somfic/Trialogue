@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Trialogue;
 using Trialogue.Components;
 using Trialogue.Ecs;
+using Trialogue.Systems;
 using Trialogue.Systems.Rendering;
 using Trialogue.Systems.Rendering.Ui;
 using Trialogue.Window;
@@ -27,7 +28,7 @@ namespace Hireath
         {
             AddSystem<RenderSystem>();
             AddSystem<UiRenderSystem>();
-            //AddSystem<CameraSystem>();
+            AddSystem<PhysicsSystem>();
 
             _camera = CreateEntity("Camera");
             ref var cameraCamera = ref _camera.Get<Camera>();
@@ -47,13 +48,20 @@ namespace Hireath
             ref var renderer = ref _cube.Get<Renderer>();
             ref var transform = ref _cube.Get<Transform>();
 
-            model.SetModel("Models/sphere.obj", Trialogue.Importer.Shading.Smooth);
+            model.SetModel("Models/cow.obj", Trialogue.Importer.Shading.Smooth);
 
             transform.Scale = Vector3.One;
 
             material.SetShaders(Shader.FromFile("Shaders/vertex.vert"), Shader.FromFile("Shaders/fragment.frag"));
             material.AmbientOcclusion = 1;
             material.Albedo = new Vector3(1, 0, 0);
+        }
+
+        public override void OnUpdate(ref Context context)
+        {
+            ref var camera = ref _camera.Get<Camera>();
+            
+            camera.Target = _cube.Get<Transform>().Position;
         }
     }
 

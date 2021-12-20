@@ -10,12 +10,12 @@ using Veldrid.SPIRV;
 
 namespace Trialogue.Systems.Rendering
 {
-    public class RenderSystem : IEcsStartSystem, IEcsUpdateSystem, IEcsRenderSystem, IEcsDestroySystem
+    public class RenderSystem : IEcsStartSystem, IEcsRenderSystem, IEcsDestroySystem
     {
         private readonly ILogger<RenderSystem> _log;
         private EcsFilter<Camera, Transform> _cameraFilter;
 
-        private EcsFilter<Model, Material, Transform, Renderer> _filter;
+        private EcsFilter<Model, Material, Transform, Renderer> _entities;
         private EcsFilter<Light, Transform> _lights;
 
         private EcsWorld _world = null;
@@ -48,7 +48,6 @@ namespace Trialogue.Systems.Rendering
                 new VertexElementDescription("Position", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float3),
                 new VertexElementDescription("Normal", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float3),
                 new VertexElementDescription("TexCoord", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float2));
-
 
             // Set 0
             _cameraSetLayout = resourceFactory.CreateResourceLayout(
@@ -116,12 +115,12 @@ namespace Trialogue.Systems.Rendering
                 lightStrengths[i] = light.Strength;
             }
 
-            foreach (var i in _filter)
+            foreach (var i in _entities)
             {
-                ref var model = ref _filter.Get1(i);
-                ref var material = ref _filter.Get2(i);
-                ref var transform = ref _filter.Get3(i);
-                ref var renderer = ref _filter.Get4(i);
+                ref var model = ref _entities.Get1(i);
+                ref var material = ref _entities.Get2(i);
+                ref var transform = ref _entities.Get3(i);
+                ref var renderer = ref _entities.Get4(i);
 
                 var modelMatrix = transform.CalculateModelMatrix(ref context);
 
@@ -162,11 +161,11 @@ namespace Trialogue.Systems.Rendering
 
         public void OnDestroy(ref Context context)
         {
-            foreach (var i in _filter)
+            foreach (var i in _entities)
             {
-                ref var mesh = ref _filter.Get1(i);
-                ref var material = ref _filter.Get2(i);
-                ref var renderer = ref _filter.Get3(i);
+                ref var mesh = ref _entities.Get1(i);
+                ref var material = ref _entities.Get2(i);
+                ref var renderer = ref _entities.Get3(i);
 
                 mesh.Dispose();
                 material.Dispose();
@@ -199,12 +198,12 @@ namespace Trialogue.Systems.Rendering
             _lightColorsBuffer ??= resourceFactory.CreateBuffer(new BufferDescription(2048, BufferUsage.UniformBuffer));
             _lightStrengthsBuffer ??= resourceFactory.CreateBuffer(new BufferDescription(2048, BufferUsage.UniformBuffer));
 
-            foreach (var i in _filter)
+            foreach (var i in _entities)
             {
-                ref var model = ref _filter.Get1(i);
-                ref var material = ref _filter.Get2(i);
-                ref var transform = ref _filter.Get3(i);
-                ref var renderer = ref _filter.Get4(i);
+                ref var model = ref _entities.Get1(i);
+                ref var material = ref _entities.Get2(i);
+                ref var transform = ref _entities.Get3(i);
+                ref var renderer = ref _entities.Get4(i);
 
                 // Transform
                 transform.ModelBuffer ??= resourceFactory.CreateBuffer(new BufferDescription(64, BufferUsage.UniformBuffer));
@@ -285,10 +284,6 @@ namespace Trialogue.Systems.Rendering
                     ));
                 }
             }
-        }
-
-        public void OnUpdate(ref Context context)
-        {
         }
     }
 }

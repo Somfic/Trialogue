@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel.DataAnnotations;
 using System.Numerics;
 using ImGuiNET;
 using Trialogue.Ecs;
@@ -10,11 +11,22 @@ namespace Trialogue.Components
     public struct Camera : IEcsComponent
     {
         public bool IsOrthographic;
+        
+        [Range(0.0001, 10000.0)]
         public float NearPlane;
+        
+        [Range(0.0001, 10000.0)]
         public float FarPlane;
+        
+        [Range(1, 179)]
         public float FieldOfView;
+        
+        [Range(0, 100)]
         public float Zoom;
+        
+        [Range(0, 100)]
         public float Cone;
+        
         public bool IsFollowingTarget;
         public Vector3 Target;
 
@@ -26,16 +38,6 @@ namespace Trialogue.Components
 
         internal Matrix4x4 CalculateProjectionMatrix(ref Context context)
         {
-            NearPlane = Math.Min(FarPlane, NearPlane);
-
-            if (NearPlane == 0) NearPlane = 0.001f;
-
-            FarPlane = Math.Max(FarPlane, NearPlane + 0.001f);
-
-            Cone = MathF.Max(0.1f, MathF.Min(Cone, 100));
-            
-            FieldOfView = MathF.Max(1, MathF.Min(FieldOfView, 179));
-
             var proj = IsOrthographic
                 ? Matrix4x4.CreateOrthographic(Cone, Cone * context.Window.Size.Height / context.Window.Size.Width,
                     NearPlane, FarPlane)
@@ -68,27 +70,6 @@ namespace Trialogue.Components
             //var rotation = Matrix4x4.CreateFromQuaternion(transform.Rotation);
 
             return zoom * translation;
-        }
-
-        public void DrawUi(ref EcsEntity ecsEntity)
-        {
-            ImGui.Checkbox("Orthographic", ref IsOrthographic);
-
-            ImGui.DragFloat("Near plane", ref NearPlane, 0.001f, 0.001f, float.MaxValue);
-            ImGui.DragFloat("Far plane", ref FarPlane, 1f, NearPlane, float.MaxValue);
-
-            if (IsOrthographic)
-                ImGui.SliderFloat("Cone size", ref Cone, 0.1f, 100f);
-            else
-                ImGui.SliderAngle("Field of view", ref FieldOfView, 1f, 179f);
-
-            ImGui.SliderFloat("Zoom", ref Zoom, 1f, 100f);
-
-            ImGui.DragFloat3("", ref Target, 0.5f);
-            ImGui.SameLine();
-            ImGui.Checkbox("Target", ref IsFollowingTarget);
-
-            ecsEntity.Update(this);
         }
 
         public void Dispose()

@@ -24,17 +24,6 @@ namespace Trialogue.Components
             _verticesCount = ProcessedModel.MeshParts.Sum(x => x.VertexElements.Length);
         }
 
-        public void DrawUi(ref EcsEntity ecsEntity)
-        {
-            if (ProcessedModel == null)
-            {
-                ImGui.Text("No model loaded");
-                return;
-            }
-
-            foreach (var mesh in ProcessedModel.MeshParts) ImGui.Text($"{mesh.Name} ({mesh.IndexCount} vertices)");
-        }
-        
         public void Dispose()
         {
         }

@@ -5,6 +5,7 @@ using System.Numerics;
 using System.Text;
 using ImGuiNET;
 using Trialogue.Ecs;
+using Trialogue.Systems.Rendering.Ui;
 using Veldrid;
 
 namespace Trialogue.Components
@@ -17,6 +18,7 @@ namespace Trialogue.Components
         
         internal ResourceSet MaterialSet;
 
+        [Color]
         public Vector3 Albedo;
 
         public float Metallic;
@@ -34,17 +36,7 @@ namespace Trialogue.Components
             ShaderDescriptions = shaders.Select(shader =>
                 new ShaderDescription(shader.Stage, Encoding.UTF8.GetBytes(shader.Source), "main")).ToArray();
         }
-
-        public void DrawUi(ref EcsEntity ecsEntity)
-        {
-            ImGui.ColorEdit3("Albedo", ref Albedo);
-            ImGui.SliderFloat("Metallic", ref Metallic, 0, 1);
-            ImGui.SliderFloat("Roughness", ref Roughness, 0, 1);
-            ImGui.SliderFloat("Ambient occlusion", ref AmbientOcclusion, 0, 1);
-            
-            ecsEntity.Update(this);
-        }
-
+        
         public void Dispose()
         {
             ShaderDescriptions = Array.Empty<ShaderDescription>();

@@ -21,7 +21,7 @@ namespace Trialogue.Ecs
 
     public interface IEcsComponent : IDisposable
     {
-        void DrawUi(ref EcsEntity ecsEntity);
+        
     }
 
     /// <summary>

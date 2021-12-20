@@ -1,7 +1,9 @@
 using System;
+using System.ComponentModel.DataAnnotations;
 using System.Numerics;
 using ImGuiNET;
 using Trialogue.Ecs;
+using Trialogue.Systems.Rendering.Ui;
 using Trialogue.Window;
 using Veldrid;
 
@@ -11,29 +13,11 @@ namespace Trialogue.Components
     {
         public LightType Type;
 
+        [Range(0f, 1000f)]
         public float Strength;
 
+        [Color]
         public Vector3 Color;
-
-
-        public void DrawUi(ref EcsEntity ecsEntity)
-        {
-            if(ImGui.BeginCombo("Type", Type.ToString())) {
-                foreach(LightType type in Enum.GetValues(typeof(LightType))) {
-                    if(ImGui.Selectable(type.ToString())) {
-                        Type = type;
-                    }
-                }
-
-                ImGui.EndCombo();
-            }
-
-            ImGui.ColorEdit3("Color", ref Color);
-
-            ImGui.SliderFloat("Strength", ref Strength, 1, 1000);
-
-            ecsEntity.Update(this);
-        }
 
         public void Dispose()
         {

@@ -64,7 +64,7 @@ namespace Hireath
             ref var material = ref _cow.Get<Material>();
             ref var renderer = ref _cow.Get<Renderer>();
             ref var transform = ref _cow.Get<Transform>();
-            ref var body = ref _cow.Get<Body>();
+            ref var body = ref _cow.Get<DynamicBody>();
             body.Shape = new Sphere(1);
 
             model.SetModel("Models/cow.obj", Trialogue.Importer.Shading.Smooth);

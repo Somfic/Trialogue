@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging;
 using Trialogue.Components;
 using Trialogue.Ecs;
 using Trialogue.Window;
-using Static = Trialogue.Components.Static;
+using StaticBody = Trialogue.Components.Static;
 
 namespace Trialogue.Systems.Physics
 {
@@ -19,8 +19,8 @@ namespace Trialogue.Systems.Physics
 
         private Simulation _simulation;
 
-        private EcsFilter<Transform, Body> _bodies;
-        private EcsFilter<Transform, Static> _statics;
+        private EcsFilter<Transform, DynamicBody> _bodies;
+        private EcsFilter<Transform, StaticBody> _statics;
 
         public PhysicsSystem(ILogger<PhysicsSystem> log)
         {
@@ -39,8 +39,8 @@ namespace Trialogue.Systems.Physics
                 Simulation.Create(bufferPool, narrowPhaseCallbacks, poseIntegratorCallbacks, solveDescription);
         }
 
-        private IDictionary<int, Body> bodies = new Dictionary<int, Body>();
-        private IDictionary<int, Static> statics = new Dictionary<int, Static>();
+        private IDictionary<int, DynamicBody> bodies = new Dictionary<int, DynamicBody>();
+        private IDictionary<int, StaticBody> statics = new Dictionary<int, StaticBody>();
         
         private ThreadDispatcher _threadDispatcher;
 

@@ -5,7 +5,7 @@ using Trialogue.Ecs;
 
 namespace Trialogue.Components
 {
-    public struct Body : IEcsComponent
+    public struct DynamicBody : IEcsComponent
     {
         public IShape Shape;
         

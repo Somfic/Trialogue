@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Numerics;
 using ImGuiNET;
 using Trialogue.Ecs;
+using Trialogue.Systems.Rendering;
 using Trialogue.Window;
 using Veldrid;
 
@@ -28,13 +29,12 @@ namespace Trialogue.Components
         public float Cone;
         
         public bool IsFollowingTarget;
+        
         public Vector3 Target;
-
-        internal DeviceBuffer ProjectionBuffer;
-        internal DeviceBuffer ViewBuffer;
-        internal DeviceBuffer PositionBuffer;
-
-        internal ResourceSet ResourceSet;
+        
+        internal Uniform<Matrix4x4> ProjectionUniform;
+        internal Uniform<Matrix4x4> ViewUniform;
+        internal UniformSet UniformSet;
 
         internal Matrix4x4 CalculateProjectionMatrix(ref Context context)
         {

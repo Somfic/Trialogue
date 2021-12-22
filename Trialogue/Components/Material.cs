@@ -6,6 +6,7 @@ using System.Text;
 using ImGuiNET;
 using System.ComponentModel.DataAnnotations;
 using Trialogue.Ecs;
+using Trialogue.Systems.Rendering;
 using Trialogue.Systems.Rendering.Ui;
 using Veldrid;
 
@@ -16,8 +17,6 @@ namespace Trialogue.Components
         internal Veldrid.Shader[] Shaders;
 
         internal ShaderDescription[] ShaderDescriptions;
-        
-        internal ResourceSet MaterialSet;
 
         [Color]
         public Vector3 Albedo;
@@ -31,10 +30,11 @@ namespace Trialogue.Components
         [Range(0, 1)]
         public float AmbientOcclusion;
         
-        internal DeviceBuffer AlbedoBuffer;
-        internal DeviceBuffer MetallicBuffer;
-        internal DeviceBuffer RoughnessBuffer;
-        internal DeviceBuffer AmbientOcclusionBuffer;
+        internal Uniform<Vector3> AlbedoUniform;
+        internal Uniform<float> MetallicUniform;
+        internal Uniform<float> RoughnessUniform;
+        internal Uniform<float> AmbientOcclusionUniform;
+        internal UniformSet UniformSet;
 
         public void SetShaders(params Shader[] shaders)
         {
@@ -46,10 +46,6 @@ namespace Trialogue.Components
         {
             ShaderDescriptions = Array.Empty<ShaderDescription>();
             Shaders = Array.Empty<Veldrid.Shader>();
-
-            AlbedoBuffer.Dispose();
-            RoughnessBuffer.Dispose();
-            MetallicBuffer.Dispose();
         }
     }
 }

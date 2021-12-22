@@ -18,7 +18,7 @@ layout(set = 3, binding = 1) uniform LightPositionsBuffer { vec3 lightPosition[1
 layout(set = 3, binding = 2) uniform LightColorsBuffer { vec3 lightColor[128]; };
 layout(set = 3, binding = 3) uniform LightStrengthsBuffer { float lightStrength[128]; };
 
-float PI = 3.1415926535897932384626433832795;
+const float PI = 3.1415926535897932384626433832795;
 
 float DistributionGGX(vec3 N, vec3 H, float roughness)
 {

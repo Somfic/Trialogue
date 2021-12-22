@@ -2,6 +2,7 @@
 using System.Numerics;
 using ImGuiNET;
 using Trialogue.Ecs;
+using Trialogue.Systems.Rendering;
 using Trialogue.Window;
 using Veldrid;
 
@@ -12,9 +13,12 @@ namespace Trialogue.Components
         public Vector3 Position;
         public Vector3 Scale;
         public Quaternion Rotation;
-
-        internal DeviceBuffer ModelBuffer;
-        internal ResourceSet WorldSet;
+        
+        internal Uniform<Vector3> PositionUniform;
+        internal Uniform<Vector3> ScaleUniform;
+        internal Uniform<Quaternion> RotationUniform;
+        internal Uniform<Matrix4x4> ModelUniform;
+        public UniformSet UniformSet;
 
         internal Matrix4x4 CalculateModelMatrix(ref Context context)
         {

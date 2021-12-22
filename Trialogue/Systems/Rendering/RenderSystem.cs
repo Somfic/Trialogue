@@ -7,6 +7,7 @@ using Trialogue.Ecs;
 using Trialogue.Window;
 using Veldrid;
 using Veldrid.SPIRV;
+using Shader = Veldrid.Shader;
 
 namespace Trialogue.Systems.Rendering
 {
@@ -17,22 +18,13 @@ namespace Trialogue.Systems.Rendering
 
         private EcsFilter<Model, Material, Transform, Renderer> _entities;
         private EcsFilter<Light, Transform> _lights;
-
-        private EcsWorld _world = null;
-
-        private ResourceLayout _cameraSetLayout;
-        private ResourceLayout _materialLayout;
-        private ResourceLayout _worldLayout;
-
-
-        private ResourceSet _lightSet;
-        private ResourceLayout _lightLayout;
-        private DeviceBuffer _amountOfLightsBuffer;
-        private DeviceBuffer _lightPositionsBuffer;
-        private DeviceBuffer _lightColorsBuffer;
-        private DeviceBuffer _lightStrengthsBuffer;
-
+        
         private VertexLayoutDescription _sharedVertexLayout;
+
+        private ResourceLayout _cameraLayout;
+        private ResourceLayout _worldLayout;
+        private ResourceLayout _materialLayout;
+        private ResourceLayout _lightLayout;
 
         public RenderSystem(ILogger<RenderSystem> log)
         {
@@ -45,44 +37,101 @@ namespace Trialogue.Systems.Rendering
             var resourceFactory = graphicsDevice.ResourceFactory;
 
             _sharedVertexLayout = new VertexLayoutDescription(
-                new VertexElementDescription("Position", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float3),
-                new VertexElementDescription("Normal", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float3),
-                new VertexElementDescription("TexCoord", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float2));
+                new VertexElementDescription("Position", VertexElementSemantic.TextureCoordinate,
+                    VertexElementFormat.Float3),
+                new VertexElementDescription("Normal", VertexElementSemantic.TextureCoordinate,
+                    VertexElementFormat.Float3),
+                new VertexElementDescription("TexCoord", VertexElementSemantic.TextureCoordinate,
+                    VertexElementFormat.Float2));
 
-            // Set 0
-            _cameraSetLayout = resourceFactory.CreateResourceLayout(
-                new ResourceLayoutDescription(
-                    new ResourceLayoutElementDescription("ProjectionBuffer", ResourceKind.UniformBuffer, ShaderStages.Vertex),
-                    new ResourceLayoutElementDescription("ViewBuffer", ResourceKind.UniformBuffer, ShaderStages.Vertex),
-                    new ResourceLayoutElementDescription("PositionBuffer", ResourceKind.UniformBuffer, ShaderStages.Vertex | ShaderStages.Fragment)));
+            // Set 0 - Camera
+            ref var camera = ref _cameraFilter.GetEntity(0);
+            ref var cameraCamera = ref camera.Get<Camera>();
+            ref var cameraTransform = ref camera.Get<Transform>();
+            
+            cameraCamera.ProjectionUniform = new Uniform<Matrix4x4>("Projection");
+            cameraCamera.ViewUniform = new Uniform<Matrix4x4>("View");
+            cameraTransform.PositionUniform = new Uniform<Vector3>("Position");
 
-            // Set 1
-            _worldLayout = resourceFactory.CreateResourceLayout(
-                new ResourceLayoutDescription(new ResourceLayoutElementDescription("ModelBuffer", ResourceKind.UniformBuffer, ShaderStages.Vertex)));
+            cameraCamera.UniformSet = new UniformSet(0, cameraCamera.ProjectionUniform, cameraCamera.ViewUniform, cameraTransform.PositionUniform);
+            _cameraLayout = cameraCamera.UniformSet.CreateLayout(resourceFactory);
 
-            // Set 2
-            _materialLayout = resourceFactory.CreateResourceLayout(
-                new ResourceLayoutDescription(
-                    new ResourceLayoutElementDescription("AlbedoBuffer", ResourceKind.UniformBuffer, ShaderStages.Fragment),
-                    new ResourceLayoutElementDescription("MetallicBuffer", ResourceKind.UniformBuffer, ShaderStages.Fragment),
-                    new ResourceLayoutElementDescription("RoughnessBuffer", ResourceKind.UniformBuffer, ShaderStages.Fragment),
-                    new ResourceLayoutElementDescription("AmbientOcclusionBuffer", ResourceKind.UniformBuffer, ShaderStages.Fragment)
-                ));
+            // Set 3 - Lights
+            foreach (var i in _lights)
+            {
+                ref var light = ref _lights.Get1(i);
+                ref var transform = ref _lights.Get2(i);
 
-            // Set 3
-            _lightLayout = resourceFactory.CreateResourceLayout(
-                new ResourceLayoutDescription(
-                    new ResourceLayoutElementDescription("AmountOfLightsBuffer", ResourceKind.UniformBuffer, ShaderStages.Fragment),
-                    new ResourceLayoutElementDescription("LightPositionsBuffer", ResourceKind.UniformBuffer, ShaderStages.Fragment),
-                    new ResourceLayoutElementDescription("LightColorsBuffer", ResourceKind.UniformBuffer, ShaderStages.Fragment),
-                    new ResourceLayoutElementDescription("LightStrengthsBuffer", ResourceKind.UniformBuffer, ShaderStages.Fragment)
-                ));
+                light.ColorUniform = new Uniform<Vector3>("Color");
+                light.StrengthUniform = new Uniform<float>("Strength");
+                transform.PositionUniform = new Uniform<Vector3>("Position");
+                
+                light.UniformSet = new UniformSet(3, light.ColorUniform, light.StrengthUniform, transform.PositionUniform);
+                _lightLayout ??= light.UniformSet.CreateLayout(resourceFactory);
+            }
+            
+            foreach (var i in _entities)
+            {
+                ref var model = ref _entities.Get1(i);
+                ref var material = ref _entities.Get2(i);
+                ref var transform = ref _entities.Get3(i);
+                ref var renderer = ref _entities.Get4(i);
+
+                // Set 1 - World
+                transform.ModelUniform = new Uniform<Matrix4x4>("Model");
+                transform.UniformSet = new UniformSet(1, transform.ModelUniform);
+                _worldLayout = transform.UniformSet.CreateLayout(resourceFactory);
+                
+                // Set 2 - Materials
+                material.AlbedoUniform = new Uniform<Vector3>("Albedo");
+                material.MetallicUniform = new Uniform<float>("Metallic");
+                material.RoughnessUniform = new Uniform<float>("Roughness");
+                material.AmbientOcclusionUniform = new Uniform<float>("AmbientOcclusion");
+                
+                material.UniformSet = new UniformSet(2, material.AlbedoUniform, material.MetallicUniform, material.RoughnessUniform, material.AmbientOcclusionUniform);
+                _materialLayout ??= material.UniformSet.CreateLayout(resourceFactory);
+                
+                // Build model resources
+                model.Resources ??= model.ProcessedModel.MeshParts.Select(x => x.CreateDeviceResources(graphicsDevice, resourceFactory)).ToList();
+                
+                // Setup the pipeline
+                renderer.PipeLine ??= CreatePipeline(graphicsDevice, resourceFactory, material.Shaders);
+            }
+        }
+
+        private Pipeline CreatePipeline(GraphicsDevice graphicsDevice, ResourceFactory resourceFactory, Shader[] shaders)
+        {
+            var pipelineDescription = new GraphicsPipelineDescription
+            {
+                BlendState = BlendStateDescription.SingleOverrideBlend,
+                PrimitiveTopology = PrimitiveTopology.TriangleList,
+                ResourceLayouts = new[] {_cameraLayout, _worldLayout, _materialLayout, _lightLayout},
+
+                DepthStencilState = new DepthStencilStateDescription
+                {
+                    DepthTestEnabled = true,
+                    DepthWriteEnabled = true,
+                    DepthComparison = ComparisonKind.LessEqual,
+                    StencilTestEnabled = true
+                },
+
+                RasterizerState = new RasterizerStateDescription
+                {
+                    CullMode = FaceCullMode.Front,
+                    FillMode = PolygonFillMode.Solid,
+                    FrontFace = FrontFace.CounterClockwise,
+                    DepthClipEnabled = true,
+                    ScissorTestEnabled = true
+                },
+                ShaderSet = new ShaderSetDescription(new[] {_sharedVertexLayout}, shaders),
+                Outputs = graphicsDevice.SwapchainFramebuffer.OutputDescription
+            };
+
+            return resourceFactory.CreateGraphicsPipeline(pipelineDescription);
         }
 
         public void OnRender(ref Context context)
         {
-            CreateResources(ref context);
-
             var graphicsDevice = context.Window.GraphicsDevice;
             var resourceFactory = graphicsDevice.ResourceFactory;
             var commandList = context.Window.CommandList;
@@ -106,7 +155,8 @@ namespace Trialogue.Systems.Rendering
             Vector3[] lightColors = new Vector3[128];
             float[] lightStrengths = new float[128];
 
-            foreach (var i in _lights) {
+            foreach (var i in _lights)
+            {
                 ref var light = ref _lights.Get1(i);
                 ref var lightTransform = ref _lights.Get2(i);
 
@@ -125,13 +175,23 @@ namespace Trialogue.Systems.Rendering
                 var modelMatrix = transform.CalculateModelMatrix(ref context);
 
                 commandList.ClearColorTarget(0, RgbaFloat.Black);
+                
+                camera.ProjectionUniform.Update(commandList, ref projectionMatrix);
+                camera.ViewUniform.Update(commandList, ref viewMatrix);
+                cameraTransform.PositionUniform.Update(commandList, ref cameraTransform.Position);
+                
+                transform.PositionUniform.Update(commandList, ref transform.Position);
+                transform.RotationUniform.Update(commandList, ref transform.Rotation);
+                transform.ScaleUniform.Update(commandList, ref transform.Scale);
+                
+                material.AmbientOcclusionUniform.Update(commandList, ref material.AmbientOcclusion);
+                material.AlbedoUniform.Update(commandList, ref material.Albedo);
+                material.MetallicUniform.Update(commandList, ref material.Metallic);
+                material.RoughnessUniform.Update(commandList, ref material.Roughness);
+   
+                // commandList.UpdateBuffer(transform.ModelBuffer, 0, ref modelMatrix);
+                worldSetModel.Update(commandList, ref modelMatrix);
 
-                commandList.UpdateBuffer(camera.ProjectionBuffer, 0, ref projectionMatrix);
-                commandList.UpdateBuffer(camera.ViewBuffer, 0, ref viewMatrix);
-                commandList.UpdateBuffer(camera.PositionBuffer, 0, ref cameraTransform.Position);
-
-                commandList.UpdateBuffer(transform.ModelBuffer, 0, ref modelMatrix);
-            
                 commandList.UpdateBuffer(material.AlbedoBuffer, 0, ref material.Albedo);
                 commandList.UpdateBuffer(material.MetallicBuffer, 0, ref material.Metallic);
                 commandList.UpdateBuffer(material.RoughnessBuffer, 0, ref material.Roughness);
@@ -149,8 +209,8 @@ namespace Trialogue.Systems.Rendering
                     commandList.SetVertexBuffer(0, modelResource.VertexBuffer);
                     commandList.SetIndexBuffer(modelResource.IndexBuffer, modelResource.IndexFormat);
 
-                    commandList.SetGraphicsResourceSet(0, camera.ResourceSet);
-                    commandList.SetGraphicsResourceSet(1, transform.WorldSet);
+                    commandList.SetGraphicsResourceSet(0, camera.UniformSet.CreateSet());
+                    commandList.SetGraphicsResourceSet(worldSet.SetNumber, worldSet.Set);
                     commandList.SetGraphicsResourceSet(2, material.MaterialSet);
                     commandList.SetGraphicsResourceSet(3, _lightSet);
 
@@ -170,119 +230,6 @@ namespace Trialogue.Systems.Rendering
                 mesh.Dispose();
                 material.Dispose();
                 renderer.Dispose();
-            }
-        }
-
-        private void CreateResources(ref Context context)
-        {
-            var graphicsDevice = context.Window.GraphicsDevice;
-            var resourceFactory = graphicsDevice.ResourceFactory;
-
-            if (_cameraFilter.IsEmpty())
-            {
-                return;
-            }
-
-            ref var cameraEntity = ref _cameraFilter.GetEntity(0);
-            ref var camera = ref cameraEntity.Get<Camera>();
-            ref var cameraTransform = ref cameraEntity.Get<Camera>();
-
-            // Camera
-            camera.ProjectionBuffer ??= resourceFactory.CreateBuffer(new BufferDescription(64, BufferUsage.UniformBuffer));
-            camera.ViewBuffer ??= resourceFactory.CreateBuffer(new BufferDescription(64, BufferUsage.UniformBuffer));
-            camera.PositionBuffer ??= resourceFactory.CreateBuffer(new BufferDescription(64, BufferUsage.UniformBuffer));
-
-            // Lights
-            _amountOfLightsBuffer ??= resourceFactory.CreateBuffer(new BufferDescription(64, BufferUsage.UniformBuffer));
-            _lightPositionsBuffer ??= resourceFactory.CreateBuffer(new BufferDescription(2048, BufferUsage.UniformBuffer));
-            _lightColorsBuffer ??= resourceFactory.CreateBuffer(new BufferDescription(2048, BufferUsage.UniformBuffer));
-            _lightStrengthsBuffer ??= resourceFactory.CreateBuffer(new BufferDescription(2048, BufferUsage.UniformBuffer));
-
-            foreach (var i in _entities)
-            {
-                ref var model = ref _entities.Get1(i);
-                ref var material = ref _entities.Get2(i);
-                ref var transform = ref _entities.Get3(i);
-                ref var renderer = ref _entities.Get4(i);
-
-                // Transform
-                transform.ModelBuffer ??= resourceFactory.CreateBuffer(new BufferDescription(64, BufferUsage.UniformBuffer));
-
-                // Model
-                model.Resources ??=
-                    model.ProcessedModel.MeshParts
-                        .Select(x => x.CreateDeviceResources(graphicsDevice, resourceFactory)).ToList();
-
-                if (material.Shaders == null)
-                {
-                    // Shaders
-                    var vertex = material.ShaderDescriptions.First(x => x.Stage == ShaderStages.Vertex);
-                    var fragment = material.ShaderDescriptions.First(x => x.Stage == ShaderStages.Fragment);
-                    material.Shaders = resourceFactory.CreateFromSpirv(vertex, fragment);
-                }
-
-                material.AlbedoBuffer ??= resourceFactory.CreateBuffer(new BufferDescription(64, BufferUsage.UniformBuffer));
-                material.MetallicBuffer ??= resourceFactory.CreateBuffer(new BufferDescription(64, BufferUsage.UniformBuffer));
-                material.RoughnessBuffer ??= resourceFactory.CreateBuffer(new BufferDescription(64, BufferUsage.UniformBuffer));
-                material.AmbientOcclusionBuffer ??= resourceFactory.CreateBuffer(new BufferDescription(64, BufferUsage.UniformBuffer));
-
-                // Renderer
-                if (renderer.PipeLine == null || transform.WorldSet == null || camera.ResourceSet == null ||
-                    material.MaterialSet == null || _lightSet == null)
-                {
-                    var pipelineDescription = new GraphicsPipelineDescription
-                    {
-                        BlendState = BlendStateDescription.SingleOverrideBlend,
-                        PrimitiveTopology = PrimitiveTopology.TriangleList,
-                        ResourceLayouts = new[] {_cameraSetLayout, _worldLayout, _materialLayout, _lightLayout},
-
-                        DepthStencilState = new DepthStencilStateDescription
-                        {
-                            DepthTestEnabled = true,
-                            DepthWriteEnabled = true,
-                            DepthComparison = ComparisonKind.LessEqual,
-                            StencilTestEnabled = true
-                        },
-
-                        RasterizerState = new RasterizerStateDescription
-                        {
-                            CullMode = FaceCullMode.Front,
-                            FillMode = PolygonFillMode.Solid,
-                            FrontFace = FrontFace.CounterClockwise,
-                            DepthClipEnabled = true,
-                            ScissorTestEnabled = true
-                        },
-                        ShaderSet = new ShaderSetDescription(new[] {_sharedVertexLayout}, material.Shaders),
-                        Outputs = graphicsDevice.SwapchainFramebuffer.OutputDescription
-                    };
-
-                    renderer.PipeLine ??= resourceFactory.CreateGraphicsPipeline(pipelineDescription);
-
-                    transform.WorldSet ??= resourceFactory.CreateResourceSet(new ResourceSetDescription(
-                        _worldLayout, transform.ModelBuffer));
-
-                    material.MaterialSet ??= resourceFactory.CreateResourceSet(new ResourceSetDescription(
-                        _materialLayout, 
-                        material.AlbedoBuffer, 
-                        material.MetallicBuffer, 
-                        material.RoughnessBuffer,
-                        material.AmbientOcclusionBuffer
-                    ));
-
-                    camera.ResourceSet ??= resourceFactory.CreateResourceSet(new ResourceSetDescription(
-                        _cameraSetLayout,
-                        camera.ProjectionBuffer,
-                        camera.ViewBuffer,
-                        camera.PositionBuffer));
- 
-                    _lightSet ??= resourceFactory.CreateResourceSet(new ResourceSetDescription(
-                        _lightLayout,
-                        _amountOfLightsBuffer,
-                        _lightPositionsBuffer,
-                        _lightColorsBuffer,
-                        _lightStrengthsBuffer
-                    ));
-                }
             }
         }
     }

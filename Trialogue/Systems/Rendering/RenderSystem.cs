@@ -2,11 +2,17 @@
 using System.Linq;
 using System.Numerics;
 using Microsoft.Extensions.Logging;
+using SharpDX.Direct3D11;
 using Trialogue.Components;
 using Trialogue.Ecs;
 using Trialogue.Window;
 using Veldrid;
+using Veldrid.ImageSharp;
 using Veldrid.SPIRV;
+using BlendStateDescription = Veldrid.BlendStateDescription;
+using BufferDescription = Veldrid.BufferDescription;
+using DepthStencilStateDescription = Veldrid.DepthStencilStateDescription;
+using RasterizerStateDescription = Veldrid.RasterizerStateDescription;
 
 namespace Trialogue.Systems.Rendering
 {
@@ -68,7 +74,8 @@ namespace Trialogue.Systems.Rendering
                     new ResourceLayoutElementDescription("AlbedoBuffer", ResourceKind.UniformBuffer, ShaderStages.Fragment),
                     new ResourceLayoutElementDescription("MetallicBuffer", ResourceKind.UniformBuffer, ShaderStages.Fragment),
                     new ResourceLayoutElementDescription("RoughnessBuffer", ResourceKind.UniformBuffer, ShaderStages.Fragment),
-                    new ResourceLayoutElementDescription("AmbientOcclusionBuffer", ResourceKind.UniformBuffer, ShaderStages.Fragment)
+                    new ResourceLayoutElementDescription("AmbientOcclusionBuffer", ResourceKind.UniformBuffer, ShaderStages.Fragment),
+                    new ResourceLayoutElementDescription("TextureBuffer", ResourceKind.TextureReadOnly, ShaderStages.Fragment)
                 ));
 
             // Set 3
@@ -219,6 +226,13 @@ namespace Trialogue.Systems.Rendering
                     model.ProcessedModel.MeshParts
                         .Select(x => x.CreateDeviceResources(graphicsDevice, resourceFactory)).ToList();
 
+                if (model.Texture is {Exists: true})
+                {
+                    var texture = new ImageSharpTexture(model.Texture.FullName);
+                    model.TextureResource = texture.CreateDeviceTexture(graphicsDevice, resourceFactory);
+                    model.TextureResource.Usage = TextureUsage.Sampled;
+                }
+                
                 if (material.Shaders == null)
                 {
                     // Shaders
@@ -272,7 +286,8 @@ namespace Trialogue.Systems.Rendering
                         material.AlbedoBuffer, 
                         material.MetallicBuffer, 
                         material.RoughnessBuffer,
-                        material.AmbientOcclusionBuffer
+                        material.AmbientOcclusionBuffer,
+                        model.TextureResource
                     ));
 
                     camera.ResourceSet ??= resourceFactory.CreateResourceSet(new ResourceSetDescription(

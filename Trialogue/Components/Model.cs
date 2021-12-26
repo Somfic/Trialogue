@@ -4,15 +4,20 @@ using System.Linq;
 using ImGuiNET;
 using Trialogue.Ecs;
 using Trialogue.Importer;
+using Veldrid;
+using Veldrid.ImageSharp;
 
 namespace Trialogue.Components
 {
     public struct Model : IEcsComponent
     {
         internal ProcessedModel ProcessedModel;
+
+        public FileInfo Texture;
+
         internal IList<ModelResources> Resources;
 
-        private long _verticesCount;
+        internal Texture TextureResource;
 
         public void SetModel(string path, Shading shadingMode = Shading.Flat)
         {
@@ -20,10 +25,8 @@ namespace Trialogue.Components
 
             using var file = File.OpenRead(fullPath);
             ProcessedModel = new AssimpProcessor().ProcessT(file, Path.GetExtension(fullPath), shadingMode);
-
-            _verticesCount = ProcessedModel.MeshParts.Sum(x => x.VertexElements.Length);
         }
-
+        
         public void Dispose()
         {
         }

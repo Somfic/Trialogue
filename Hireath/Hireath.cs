@@ -67,7 +67,7 @@ namespace Hireath
             ref var body = ref _cow.Get<DynamicBody>();
             body.Shape = new Sphere(1);
 
-            model.SetModel("Models/cow.obj", Trialogue.Importer.Shading.Smooth);
+            model.SetModel("Models/Backpack/Survival_BackPack_2.fbx");
             transform.Scale = Vector3.One;
             transform.Position = new Vector3(0, 10, 0);
             material.SetShaders(Shader.FromFile("Shaders/vertex.vert"), Shader.FromFile("Shaders/fragment.frag"));

@@ -69,7 +69,7 @@ namespace Trialogue.Systems.Physics
                     var shape = AddCollidable(body.Shape);
 
                     var inertia = new BodyInertia {InverseMass = 1f / body.Mass};
-                    var activity = new BodyActivityDescription(100);
+                    var activity = new BodyActivityDescription(10000);
                     body.Handle = _simulation.Bodies.Add(BodyDescription.CreateDynamic(pose, inertia, shape, activity));
 
                     bodies.Add(id, body);
@@ -152,6 +152,7 @@ namespace Trialogue.Systems.Physics
 
         public void OnDestroy(ref Context context)
         {
+        
         }
 
         private TypedIndex AddCollidable(IShape shape)

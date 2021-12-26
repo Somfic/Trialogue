@@ -5,6 +5,7 @@ using System.Numerics;
 using System.Text;
 using ImGuiNET;
 using System.ComponentModel.DataAnnotations;
+using System.IO;
 using Trialogue.Ecs;
 using Trialogue.Systems.Rendering.Ui;
 using Veldrid;
@@ -30,6 +31,8 @@ namespace Trialogue.Components
 
         [Range(0, 1)]
         public float AmbientOcclusion;
+        
+        public FileInfo Texture;
         
         internal DeviceBuffer AlbedoBuffer;
         internal DeviceBuffer MetallicBuffer;

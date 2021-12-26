@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using ImGuiNET;
 using Microsoft.Extensions.Logging;
+using Nez.ImGuiTools;
 using Trialogue.Components;
 using Trialogue.Ecs;
 using Trialogue.Systems.Rendering.Ui;
@@ -27,6 +29,7 @@ namespace Trialogue.Systems.Rendering
         private ImGuiRenderer _imgUiRenderer;
 
         private IList<Type> components = new List<Type>();
+        private bool isUsingFilePicker;
 
         public UiRenderSystem(ILogger<UiRenderSystem> log)
         {
@@ -359,6 +362,60 @@ namespace Trialogue.Systems.Rendering
                 }
 
                 field.SetValue(instance, value);
+            }
+            else if (field.FieldType == typeof(FileInfo))
+            {
+                string value = field.GetValue(instance) is not FileInfo v ? "" : v.Name;
+                
+                ImGui.InputTextWithHint(field.Name, "No file selected", value, 256);
+                ImGui.SameLine();
+
+                isUsingFilePicker = ImGui.IsItemClicked();
+
+                if (isUsingFilePicker)
+                {
+                    ImGui.OpenPopup("open-file");
+                }
+                
+                if (ImGui.BeginPopup("open-file"))
+                {
+                    var picker = FilePicker.GetFilePicker(this, Environment.CurrentDirectory);
+                    if (picker.Draw())
+                    {
+                        field.SetValue(instance, new FileInfo(picker.SelectedFile));
+                        FilePicker.RemoveFilePicker(this);
+                    }
+                    ImGui.EndPopup();
+                }
+                
+                 ImGui.NewLine();
+            }
+            else if (field.FieldType == typeof(DirectoryInfo))
+            {
+                string value = field.GetValue(instance) is not DirectoryInfo v ? "" : v.Name;
+                
+                ImGui.InputTextWithHint(field.Name, "No folder selected", value, 256);
+                ImGui.SameLine();
+
+                isUsingFilePicker = ImGui.IsItemClicked();
+
+                if (isUsingFilePicker)
+                {
+                    ImGui.OpenPopup("open-folder");
+                }
+                
+                if (ImGui.BeginPopup("open-folder"))
+                {
+                    var picker = FilePicker.GetFolderPicker(this, Environment.CurrentDirectory);
+                    if (picker.Draw())
+                    {
+                        field.SetValue(instance, new DirectoryInfo(picker.SelectedFile));
+                        FilePicker.RemoveFilePicker(this);
+                    }
+                    ImGui.EndPopup();
+                }
+                
+                ImGui.NewLine();
             }
             else
             {

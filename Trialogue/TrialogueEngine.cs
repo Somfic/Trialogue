@@ -1,137 +1,114 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Trialogue.Ecs;
 using Trialogue.Glfw;
+using Trialogue.OpenGl;
 using Trialogue.Systems.Rendering;
-using Trialogue.Window;
+using Trialogue.Windows;
+using Exception = Trialogue.Glfw.Exception;
 
-namespace Trialogue
+namespace Trialogue;
+
+public abstract class TrialogueEngine
 {
-    public class TrialogueEngine
+    private readonly IServiceProvider _services;
+    private readonly ILogger<TrialogueEngine>? _log;
+    private readonly WindowManager _window;
+    
+    private readonly EcsWorld _world;
+    private readonly EcsSystems _logicSystems;
+    private readonly EcsSystems _renderSystems;
+
+    protected TrialogueEngine(IServiceProvider services)
     {
-        private TrialogueEngine()
-        {
-            _hostBuilder = Host.CreateDefaultBuilder();
-
-            _hostBuilder.ConfigureLogging(logger =>
-            {
-                logger.ClearProviders();
-                logger.SetMinimumLevel(LogLevel.Trace);
-                logger.AddConsole();
-            });
-        }
-
-        /// <summary>
-        /// Creates a new TrialogueEngine object
-        /// </summary>
-        /// <typeparam name="T">The implementation of the window</typeparam>
-        /// <returns></returns>
-        public static TrialogueEngine Create<T>() where T : Window.Window
-        {
-            return Create<T>(new WindowOptions());
-        }
+        _services = services;
+        _log = services.GetService<ILogger<TrialogueEngine>>();
+        _window = services.GetRequiredService<WindowManager>();
         
-        /// <summary>
-        /// Creates a new TrialogueEngine object
-        /// </summary>
-        /// <param name="windowOptions">The options for the window</param>
-        /// <typeparam name="T">The implementation of the window</typeparam>
-        /// <returns></returns>
-        public static TrialogueEngine Create<T>(WindowOptions windowOptions) where T : Window.Window
+        _world = new EcsWorld();
+        _logicSystems = new EcsSystems(_world);
+        _renderSystems = new EcsSystems(_world);
+    }
+    
+    protected void AddLogicSystem<T>() where T : IEcsSystem => _logicSystems.Add<T>(_services);
+    
+    protected void AddRenderSystem<T>() where T : IEcsSystem => _renderSystems.Add<T>(_services);
+
+    protected EcsEntity CreateEntity(string name)
+    {
+        return _world.NewEntity(name);
+    }
+    
+    internal void Start()
+    {
+        try
         {
-            var t = new TrialogueEngine
-            {
-                _windowOptions = windowOptions
-            };
+            // todo: loading window here?
+
+            OnSetup();
             
-            t.Inject<Window.Window, T>();
-            t.Inject<WindowFactory>();
-
-            return t;
-        }
-
-        private WindowOptions _windowOptions;
-        private readonly IHostBuilder _hostBuilder;
-        private IHost _host;
-
-        /// <summary>
-        /// Injects a service into the engine
-        /// </summary>
-        /// <typeparam name="TService">The type of service to inject</typeparam>
-        public void Inject<TService>() where TService : class
-        {
-            _hostBuilder.ConfigureServices(e =>
-            {
-                e.AddSingleton<TService>();
-            });
-        }
-        
-        /// <summary>
-        /// Injects a service into the engine
-        /// </summary>
-        /// <typeparam name="TService">The type of service to inject</typeparam>
-        /// <typeparam name="TImplementation">The type of implementation to use</typeparam>
-        public void Inject<TService, TImplementation>() where TService : class where TImplementation : class, TService
-        {
-            _hostBuilder.ConfigureServices(e =>
-            {
-                e.AddSingleton<TService, TImplementation>();
-            });
-        }
-
-        public void Run()
-        {
-            // Build the host
-            _host = _hostBuilder.Build();
-  
-            // Create the window
-            var nativeWindow = _host.Services.GetRequiredService<WindowFactory>().Create(_windowOptions);
+            _logicSystems.OnInitialise();
+            _renderSystems.OnInitialise();
             
-            // Get the window implementation
-            var window = _host.Services.GetRequiredService<Window.Window>();
-            window._world = new EcsWorld();
-            window._systems = new EcsSystems(window._world);
-            window._serviceProvider = _host.Services;
+            _window.Create();
 
-            window.OnInitialise();
-            window.CreateSystem<RenderSystem>();
+            var lastTime = _window.Time;
+            uint frames = 0;
             
-            window._systems.OnStart();
-            window._hasInitialised = true;
-
-            var lastTime = GLFW.Time;
-            while (!GLFW.WindowShouldClose(nativeWindow))
+            // Main game loop
+            while (!_window.ShouldClose())
             {
+                frames++;
+
+                var currentTime = _window.Time;
+                var deltaTime = currentTime - lastTime;
+
+                if (deltaTime > 1)
+                {
+                    lastTime = currentTime;
+                    var tmf = deltaTime * 1000.0 / frames;
+                    var fps = frames / deltaTime;
+                    
+                    GLFW.SetWindowTitle(_window.Native, $"{_window.Options.Title} | {tmf:00.00}ms | {fps:00}fps");
+                    frames = 0;
+                }
+
                 GLFW.PollEvents();
                 
-                var time = GLFW.Time;
-                var context = new Context
-                {
-                    Time = time,
-                    DeltaTime = lastTime - time 
-                };
-                lastTime = time;
+                var context = BuildContext();
+     
+                _logicSystems.OnUpdate(ref context);
 
-                window.OnUpdate();
-                window._systems.OnUpdate();
+                GL.ClearColor(0.1f, 0.1f, 0.1f, 0);
+                GL.Clear(GL.COLOR_BUFFER_BIT | GL.DEPTH_BUFFER_BIT);
+                GL.Enable(GL.DEPTH_TEST);
                 
-                window.OnRender();
-                window._systems.OnRender();
-                
-                GLFW.SwapBuffers(nativeWindow);
+                _renderSystems.OnUpdate(ref context);
+
+                GLFW.SwapBuffers(_window.Native);
             }
-
-            window.OnDestroy();
-            window._systems.OnDestroy();
-            window._world.Destroy();
+            
+            _window.Destroy();
+            
+            _logicSystems.OnDestroy();
+            _renderSystems.OnDestroy();
+            _world.Destroy();
+        }
+        catch (Exception ex)
+        {
+            _log.LogCritical(ex, "An critical error occurred that cannot be recovered from");
         }
     }
     
-    public struct Context
+    private Context BuildContext()
     {
-        public double DeltaTime;
-
-        public double Time;
+        return new Context
+        {
+            Time = _window.Time
+        };
     }
+
+    protected abstract void OnSetup();
 }

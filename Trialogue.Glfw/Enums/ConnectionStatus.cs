@@ -1,23 +1,22 @@
-﻿namespace Trialogue.Glfw.Enums
+﻿namespace Trialogue.Glfw.Enums;
+
+/// <summary>
+///     Strongly-typed values indicating connection status of joysticks, monitors, etc.
+/// </summary>
+public enum ConnectionStatus
 {
     /// <summary>
-    ///     Strongly-typed values indicating connection status of joysticks, monitors, etc.
+    ///     Unknown connection status.
     /// </summary>
-    public enum ConnectionStatus
-    {
-        /// <summary>
-        ///     Unknown connection status.
-        /// </summary>
-        Unknown = 0x00000000,
+    Unknown = 0x00000000,
 
-        /// <summary>
-        ///     Device is currently connected and visible to GLFW.
-        /// </summary>
-        Connected = 0x00040001,
+    /// <summary>
+    ///     Device is currently connected and visible to GLFW.
+    /// </summary>
+    Connected = 0x00040001,
 
-        /// <summary>
-        ///     Device is disconnected and/or not visible to GLFW.
-        /// </summary>
-        Disconnected = 0x00040002
-    }
+    /// <summary>
+    ///     Device is disconnected and/or not visible to GLFW.
+    /// </summary>
+    Disconnected = 0x00040002
 }

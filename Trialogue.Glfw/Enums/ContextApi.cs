@@ -1,23 +1,22 @@
-﻿namespace Trialogue.Glfw.Enums
+﻿namespace Trialogue.Glfw.Enums;
+
+/// <summary>
+///     Describes the API used for creating the OpenGL context.
+/// </summary>
+public enum ContextApi
 {
     /// <summary>
-    ///     Describes the API used for creating the OpenGL context.
+    ///     The native platform default.
     /// </summary>
-    public enum ContextApi
-    {
-        /// <summary>
-        ///     The native platform default.
-        /// </summary>
-        Native = 0x00036001,
+    Native = 0x00036001,
 
-        /// <summary>
-        ///     EGL
-        /// </summary>
-        Egl = 0x00036002,
+    /// <summary>
+    ///     EGL
+    /// </summary>
+    Egl = 0x00036002,
 
-        /// <summary>
-        ///     OS Mesa
-        /// </summary>
-        Mesa = 0x00036003
-    }
+    /// <summary>
+    ///     OS Mesa
+    /// </summary>
+    Mesa = 0x00036003
 }

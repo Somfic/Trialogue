@@ -1,4 +1,4 @@
-﻿namespace Trialogue.Glfw.Enums;
+﻿namespace Trialogue.GLFW.Enums;
 
 /// <summary>
 ///     Strongly-typed description for possible client APIs to be used.

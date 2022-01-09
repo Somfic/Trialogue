@@ -2,11 +2,11 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Trialogue", "Trialogue\Trialogue.csproj", "{787EB42E-0A6B-49A5-AC87-A3A459265EFC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Trialogue.Glfw", "Trialogue.Glfw\Trialogue.Glfw.csproj", "{322A9B69-5C63-4EBD-90B3-F9F7C53A0F8A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Trialogue.GLFW", "Trialogue.GLFW\Trialogue.GLFW.csproj", "{322A9B69-5C63-4EBD-90B3-F9F7C53A0F8A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Trialogue.OpenGl", "Trialogue.OpenGl\Trialogue.OpenGl.csproj", "{12F3DE0D-653B-432C-A001-193FE4601D0F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Trialogue.OpenGL", "Trialogue.OpenGL\Trialogue.OpenGL.csproj", "{12F3DE0D-653B-432C-A001-193FE4601D0F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Trialogue.Ecs", "Trialogue.Ecs\Trialogue.Ecs.csproj", "{E94B1F24-69BB-44D1-BF8E-A065DA6F64E8}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Trialogue.ECS", "Trialogue.ECS\Trialogue.ECS.csproj", "{E94B1F24-69BB-44D1-BF8E-A065DA6F64E8}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sandbox", "Sandbox\Sandbox.csproj", "{691947A7-01F3-4AFB-A454-44CD855F52A0}"
 EndProject

@@ -11,7 +11,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-namespace Trialogue.Ecs;
+namespace Trialogue.ECS;
 
 /// <summary>
 ///     Ecs data context.

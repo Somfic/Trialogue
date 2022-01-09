@@ -1,6 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 
-namespace Trialogue.Glfw.Structs;
+namespace Trialogue.GLFW.Structs;
 
 /// <summary>
 ///     Structure that describes a single video mode.

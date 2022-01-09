@@ -2,7 +2,7 @@
 
 // TODO: Create Hint component
 
-namespace Trialogue.Glfw.Enums;
+namespace Trialogue.GLFW.Enums;
 
 /// <summary>
 ///     Strongly-typed values for setting window hints.

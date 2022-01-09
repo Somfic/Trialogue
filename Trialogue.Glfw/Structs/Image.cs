@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
-namespace Trialogue.Glfw.Structs;
+namespace Trialogue.GLFW.Structs;
 
 /// <summary>
 ///     Describes a basic image structure.

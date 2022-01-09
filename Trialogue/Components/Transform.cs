@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Numerics;
-using Trialogue.Ecs;
+using Trialogue.ECS;
 
 namespace Trialogue.Components;
 

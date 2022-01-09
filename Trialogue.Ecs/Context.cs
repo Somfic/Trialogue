@@ -1,4 +1,4 @@
-﻿namespace Trialogue.Ecs;
+﻿namespace Trialogue.ECS;
 
 public readonly struct Context
 {

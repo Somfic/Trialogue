@@ -1,4 +1,4 @@
-﻿namespace Trialogue.Ecs;
+﻿namespace Trialogue.ECS;
 
 public struct ComponentInfo : IEcsComponent
 {

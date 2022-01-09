@@ -1,4 +1,4 @@
-﻿namespace Trialogue.Glfw.Enums;
+﻿namespace Trialogue.GLFW.Enums;
 
 /// <summary>
 ///     Strongly-typed values used for getting/setting window hints.

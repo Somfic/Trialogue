@@ -8,7 +8,7 @@ using System;
 using System.Runtime.CompilerServices;
 using System.Text;
 
-namespace Trialogue.Ecs;
+namespace Trialogue.ECS;
 
 /// <summary>
 ///     Entity descriptor.

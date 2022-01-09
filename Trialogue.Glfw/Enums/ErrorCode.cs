@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Trialogue.Glfw.Enums;
+namespace Trialogue.GLFW.Enums;
 
 /// <summary>
 ///     Strongly-typed error codes for error handling.

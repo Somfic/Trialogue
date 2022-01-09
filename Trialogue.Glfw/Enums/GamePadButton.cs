@@ -1,6 +1,6 @@
 #pragma warning disable 1591
 
-namespace Trialogue.Glfw.Enums;
+namespace Trialogue.GLFW.Enums;
 
 /// <summary>
 ///     Represents gamepad buttons.

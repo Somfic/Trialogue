@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Drawing;
 using Microsoft.Extensions.Logging;
-using Trialogue.Glfw;
-using Trialogue.Glfw.Enums;
-using Trialogue.Glfw.Structs;
-using Trialogue.OpenGl;
+using Trialogue.GLFW;
+using Trialogue.GLFW.Enums;
+using Trialogue.GLFW.Structs;
+using Trialogue.OpenGL;
 using Exception = System.Exception;
 
 namespace Trialogue.Windows;

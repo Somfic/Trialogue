@@ -11,7 +11,7 @@ using System.Runtime.CompilerServices;
 // ReSharper disable InconsistentNaming
 // ReSharper disable ClassNeverInstantiated.Global
 
-namespace Trialogue.Ecs;
+namespace Trialogue.ECS;
 #if LEOECS_FILTER_EVENTS
     /// <summary>
     /// Common interface for all filter listeners.

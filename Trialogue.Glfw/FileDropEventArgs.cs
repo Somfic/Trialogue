@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Trialogue.Glfw;
+namespace Trialogue.GLFW;
 
 /// <summary>
 ///     Arguments supplied with file drag-drop events.

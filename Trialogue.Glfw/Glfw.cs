@@ -3,12 +3,12 @@ using System.Runtime.InteropServices;
 using System.Security;
 using System.Text;
 using JetBrains.Annotations;
-using Trialogue.Glfw.Enums;
-using Trialogue.Glfw.Structs;
+using Trialogue.GLFW.Enums;
+using Trialogue.GLFW.Structs;
 
 #pragma warning disable 0419
 
-namespace Trialogue.Glfw;
+namespace Trialogue.GLFW;
 
 /// <summary>
 ///     The base class the vast majority of the GLFW functions, excluding only V    ulkan and native platform specific

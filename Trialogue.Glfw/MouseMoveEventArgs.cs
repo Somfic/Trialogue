@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Drawing;
 
-namespace Trialogue.Glfw;
+namespace Trialogue.GLFW;
 
 /// <summary>
 ///     Arguments supplied with mouse movement events.

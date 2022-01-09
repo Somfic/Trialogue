@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Drawing;
 using Microsoft.Extensions.Logging;
-using Trialogue.Ecs;
-using Trialogue.Glfw;
-using Trialogue.OpenGl;
+using Trialogue.ECS;
+using Trialogue.GLFW;
+using Trialogue.OpenGL;
 using Trialogue.Windows;
 
 namespace Trialogue.Systems.Rendering;

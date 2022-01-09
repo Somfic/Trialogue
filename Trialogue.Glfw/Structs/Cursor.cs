@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
-namespace Trialogue.Glfw.Structs;
+namespace Trialogue.GLFW.Structs;
 
 /// <summary>
 ///     Wrapper around a handle for a window cursor object.

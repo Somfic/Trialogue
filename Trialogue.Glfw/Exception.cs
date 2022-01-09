@@ -1,6 +1,6 @@
-﻿using Trialogue.GLFW.Enums;
+﻿using Trialogue.Glfw.Enums;
 
-namespace Trialogue.GLFW;
+namespace Trialogue.Glfw;
 
 /// <summary>
 /// Base exception class for GLFW related errors.

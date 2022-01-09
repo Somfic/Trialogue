@@ -4,10 +4,10 @@ using System.Drawing;
 using System.Runtime.InteropServices;
 using JetBrains.Annotations;
 using Microsoft.Win32.SafeHandles;
-using Trialogue.GLFW.Enums;
-using Trialogue.GLFW.Structs;
+using Trialogue.Glfw.Enums;
+using Trialogue.Glfw.Structs;
 
-namespace Trialogue.GLFW;
+namespace Trialogue.Glfw;
 
 /// <summary>
 ///     Provides a simplified interface for creating and using a GLFW window with properties, events, etc.
@@ -558,7 +558,7 @@ public class NativeWindow : SafeHandleZeroOrMinusOneIsInvalid, IEquatable<Native
     /// <summary>
     ///     Initializes a new instance of the <see cref="NativeWindow" /> class.
     /// </summary>
-    public NativeWindow() : this(800, 600, string.Empty, Monitor.None, this.Window.None)
+    public NativeWindow() : this(800, 600, string.Empty, Monitor.None, Window.None)
     {
     }
 
@@ -569,7 +569,7 @@ public class NativeWindow : SafeHandleZeroOrMinusOneIsInvalid, IEquatable<Native
     /// <param name="height">The desired height, in screen coordinates, of the window. This must be greater than zero.</param>
     /// <param name="title">The initial window title.</param>
     public NativeWindow(int width, int height, [CanBeNull] string title) : this(width, height, title, Monitor.None,
-        this.Window.None)
+        Window.None)
     {
     }
 

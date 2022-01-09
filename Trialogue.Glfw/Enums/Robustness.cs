@@ -1,4 +1,4 @@
-﻿namespace Trialogue.GLFW.Enums;
+﻿namespace Trialogue.Glfw.Enums;
 
 /// <summary>
 ///     Describes the robustness strategy to be used by the context.

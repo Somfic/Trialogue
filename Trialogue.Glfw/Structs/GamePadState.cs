@@ -1,7 +1,7 @@
 using System.Runtime.InteropServices;
-using Trialogue.GLFW.Enums;
+using Trialogue.Glfw.Enums;
 
-namespace Trialogue.GLFW.Structs;
+namespace Trialogue.Glfw.Structs;
 
 /// <summary>
 ///     Represents the state of a gamepad.

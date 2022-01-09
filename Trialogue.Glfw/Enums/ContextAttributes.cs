@@ -1,4 +1,4 @@
-﻿namespace Trialogue.GLFW.Enums;
+﻿namespace Trialogue.Glfw.Enums;
 
 /// <summary>
 ///     Used internally to consolidate strongly-typed values for getting/setting window attributes.

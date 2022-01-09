@@ -1,4 +1,4 @@
-﻿using Trialogue.ECS;
+﻿using Trialogue.Ecs;
 
 namespace Trialogue.Components;
 

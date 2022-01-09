@@ -1,7 +1,7 @@
 ﻿using System;
-using Trialogue.GLFW.Enums;
+using Trialogue.Glfw.Enums;
 
-namespace Trialogue.GLFW;
+namespace Trialogue.Glfw;
 
 /// <summary>
 ///     Arguments supplied with mouse button events.

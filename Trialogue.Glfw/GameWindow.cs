@@ -1,8 +1,8 @@
 using System;
-using Trialogue.GLFW.Structs;
+using Trialogue.Glfw.Structs;
 
 // ReSharper disable once CheckNamespace
-namespace Trialogue.GLFW.Game;
+namespace Trialogue.Glfw.Game;
 
 /// <inheritdoc cref="NativeWindow"/>
 [Obsolete("Use NativeWindow, GameWindow will be removed in future release.")]

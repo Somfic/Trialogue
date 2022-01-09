@@ -1,4 +1,4 @@
-﻿namespace Trialogue.GLFW.Enums;
+﻿namespace Trialogue.Glfw.Enums;
 
 /// <summary>
 ///     Strongly-typed values indicating connection status of joysticks, monitors, etc.

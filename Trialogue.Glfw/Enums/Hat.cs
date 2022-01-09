@@ -1,6 +1,6 @@
 using System;
 
-namespace Trialogue.GLFW.Enums;
+namespace Trialogue.Glfw.Enums;
 
 /// <summary>
 ///     Describes joystick hat states.

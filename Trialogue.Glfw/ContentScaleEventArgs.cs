@@ -1,6 +1,6 @@
 using System;
 
-namespace Trialogue.GLFW;
+namespace Trialogue.Glfw;
 
 /// <summary>
 ///     Arguments used when a window content scaling is changed.

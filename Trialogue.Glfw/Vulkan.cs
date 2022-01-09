@@ -5,7 +5,7 @@ using System.Security;
 using System.Text;
 using JetBrains.Annotations;
 
-namespace Trialogue.GLFW;
+namespace Trialogue.Glfw;
 
 /// <summary>
 ///     Implements the Vulkan specific functions of GLFW.

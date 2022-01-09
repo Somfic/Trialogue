@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Runtime.InteropServices;
-using Trialogue.GLFW.Enums;
-using Trialogue.GLFW.Structs;
+using Trialogue.Glfw.Enums;
+using Trialogue.Glfw.Structs;
 
-namespace Trialogue.GLFW;
+namespace Trialogue.Glfw;
 
 /// <summary>
 ///     Function signature for receiving error callbacks.

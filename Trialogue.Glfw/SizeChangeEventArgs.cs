@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Drawing;
 
-namespace Trialogue.GLFW;
+namespace Trialogue.Glfw;
 
 /// <summary>
 ///     Arguments supplied with size changing events.

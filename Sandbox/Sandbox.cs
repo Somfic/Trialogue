@@ -2,7 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Trialogue;
 using Trialogue.Components;
-using Trialogue.ECS;
+using Trialogue.Ecs;
 using Trialogue.Structures.Shaders;
 using Trialogue.Structures.Textures;
 using Trialogue.Systems.Rendering;

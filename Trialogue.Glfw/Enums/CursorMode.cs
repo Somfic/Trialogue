@@ -1,4 +1,4 @@
-﻿namespace Trialogue.GLFW.Enums;
+﻿namespace Trialogue.Glfw.Enums;
 
 /// <summary>
 ///     Indicates the behavior of the mouse cursor.

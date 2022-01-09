@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Trialogue.ECS;
+using Trialogue.Ecs;
 using Trialogue.Structures.Shaders;
 using Trialogue.Structures.Textures;
 

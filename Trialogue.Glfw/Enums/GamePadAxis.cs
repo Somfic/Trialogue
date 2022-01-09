@@ -1,6 +1,6 @@
 #pragma warning disable 1591
 
-namespace Trialogue.GLFW.Enums;
+namespace Trialogue.Glfw.Enums;
 
 /// <summary>
 ///     Represents a gamepad axis.

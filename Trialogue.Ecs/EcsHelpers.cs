@@ -7,7 +7,7 @@
 using System;
 using System.Runtime.CompilerServices;
 
-namespace Trialogue.ECS
+namespace Trialogue.Ecs
 {
     /// <summary>
     ///     Fast List replacement for growing only collections.

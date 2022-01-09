@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace Trialogue.GLFW.Structs;
+namespace Trialogue.Glfw.Structs;
 
 /// <summary>
 ///     Wrapper around a OSMesa context pointer.

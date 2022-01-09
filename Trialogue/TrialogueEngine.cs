@@ -2,12 +2,12 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Trialogue.ECS;
-using Trialogue.GLFW;
-using Trialogue.OpenGL;
+using Trialogue.Ecs;
+using Trialogue.Glfw;
+using Trialogue.OpenGl;
 using Trialogue.Systems.Rendering;
 using Trialogue.Windows;
-using Exception = Trialogue.GLFW.Exception;
+using Exception = Trialogue.Glfw.Exception;
 
 namespace Trialogue;
 

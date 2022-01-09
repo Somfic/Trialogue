@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 using System.Security;
 using System.Text;
 
-namespace Trialogue.OpenGL;
+namespace Trialogue.OpenGl;
 
 /// <summary>
 ///     Returns a function pointer for the OpenGL function with the specified name. 

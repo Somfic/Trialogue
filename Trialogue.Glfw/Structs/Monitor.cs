@@ -2,7 +2,7 @@
 using System.Drawing;
 using System.Runtime.InteropServices;
 
-namespace Trialogue.GLFW.Structs;
+namespace Trialogue.Glfw.Structs;
 
 /// <summary>
 ///     Wrapper around a pointer to monitor.

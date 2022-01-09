@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using JetBrains.Annotations;
 
-namespace Trialogue.GLFW;
+namespace Trialogue.Glfw;
 
 internal static class Util
 {

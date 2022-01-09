@@ -11,7 +11,7 @@ using BindingFlags = System.Reflection.BindingFlags;
 
 // ReSharper disable ClassNeverInstantiated.Global
 
-namespace Trialogue.ECS;
+namespace Trialogue.Ecs;
 
 /// <summary>
 ///     Marks component type to be not auto-filled as GetX in filter.

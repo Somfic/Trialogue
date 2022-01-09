@@ -3,9 +3,9 @@ using System.Runtime.InteropServices;
 using System.Security;
 using System.Text;
 using JetBrains.Annotations;
-using Trialogue.GLFW.Structs;
+using Trialogue.Glfw.Structs;
 
-namespace Trialogue.GLFW;
+namespace Trialogue.Glfw;
 
 /// <summary>
 ///     Provides access to relevant native functions of the current operating system.

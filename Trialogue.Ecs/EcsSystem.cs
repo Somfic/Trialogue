@@ -9,7 +9,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Trialogue.ECS;
+namespace Trialogue.Ecs;
 
 /// <summary>
 ///     Base interface for all systems.

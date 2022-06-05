@@ -1,15 +1,14 @@
 ﻿using Trialogue.Ecs;
 using Veldrid;
 
-namespace Trialogue.Components
-{
-    public struct Renderer : IEcsComponent
-    {
-        internal Pipeline PipeLine;
+namespace Trialogue.Components;
 
-        public void Dispose()
-        {
-            PipeLine?.Dispose();
-        }
+public struct Renderer : IEcsComponent
+{
+    internal Pipeline PipeLine;
+
+    public void Dispose()
+    {
+        PipeLine?.Dispose();
     }
 }

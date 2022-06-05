@@ -1,18 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Trialogue.Importer
+namespace Trialogue.Importer;
+
+public static class DefaultSerializers
 {
-    public static class DefaultSerializers
+    public static Dictionary<Type, BinaryAssetSerializer> Get()
     {
-        public static Dictionary<Type, BinaryAssetSerializer> Get()
+        return new Dictionary<Type, BinaryAssetSerializer>
         {
-            return new Dictionary<Type, BinaryAssetSerializer>
-            {
-                {typeof(ProcessedTexture), new ProcessedTextureDataSerializer()},
-                {typeof(ProcessedModel), new ProcessedModelSerializer()},
-                {typeof(byte[]), new ByteArraySerializer()}
-            };
-        }
+            {typeof(ProcessedTexture), new ProcessedTextureDataSerializer()},
+            {typeof(ProcessedModel), new ProcessedModelSerializer()},
+            {typeof(byte[]), new ByteArraySerializer()}
+        };
     }
 }

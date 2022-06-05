@@ -3,32 +3,31 @@ using BepuPhysics;
 using BepuPhysics.Collidables;
 using Trialogue.Ecs;
 
-namespace Trialogue.Components
+namespace Trialogue.Components;
+
+public struct DynamicBody : IEcsComponent
 {
-    public struct DynamicBody : IEcsComponent
-    {
-        public IShape Shape;
+    public IShape Shape;
         
-        [Range(0, 1000)]
-        public float Mass;
+    [Range(0, 1000)]
+    public float Mass;
 
-        internal BodyHandle Handle;
+    internal BodyHandle Handle;
 
-        public void Dispose()
-        {
-            
-        }
-    }
-    
-    public struct Static : IEcsComponent
+    public void Dispose()
     {
-        public IShape Shape;
-
-        internal StaticHandle Handle;
-
-        public void Dispose()
-        {
             
-        }
+    }
+}
+    
+public struct Static : IEcsComponent
+{
+    public IShape Shape;
+
+    internal StaticHandle Handle;
+
+    public void Dispose()
+    {
+            
     }
 }

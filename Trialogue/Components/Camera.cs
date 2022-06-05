@@ -6,74 +6,73 @@ using Trialogue.Ecs;
 using Trialogue.Window;
 using Veldrid;
 
-namespace Trialogue.Components
+namespace Trialogue.Components;
+
+public struct Camera : IEcsComponent
 {
-    public struct Camera : IEcsComponent
+    public bool IsOrthographic;
+        
+    [Range(0.0001, 10000.0)]
+    public float NearPlane;
+        
+    [Range(0.0001, 10000.0)]
+    public float FarPlane;
+        
+    [Range(1, 179)]
+    public float FieldOfView;
+        
+    [Range(0, 100)]
+    public float Zoom;
+        
+    [Range(0, 100)]
+    public float Cone;
+        
+    public bool IsFollowingTarget;
+    public Vector3 Target;
+
+    internal DeviceBuffer ProjectionBuffer;
+    internal DeviceBuffer ViewBuffer;
+    internal DeviceBuffer PositionBuffer;
+
+    internal ResourceSet ResourceSet;
+
+    internal Matrix4x4 CalculateProjectionMatrix(ref Context context)
     {
-        public bool IsOrthographic;
-        
-        [Range(0.0001, 10000.0)]
-        public float NearPlane;
-        
-        [Range(0.0001, 10000.0)]
-        public float FarPlane;
-        
-        [Range(1, 179)]
-        public float FieldOfView;
-        
-        [Range(0, 100)]
-        public float Zoom;
-        
-        [Range(0, 100)]
-        public float Cone;
-        
-        public bool IsFollowingTarget;
-        public Vector3 Target;
+        var proj = IsOrthographic
+            ? Matrix4x4.CreateOrthographic(Cone, Cone * context.Window.Size.Height / context.Window.Size.Width,
+                NearPlane, FarPlane)
+            : Matrix4x4.CreatePerspectiveFieldOfView(FieldOfView,
+                context.Window.Size.Width / (float) context.Window.Size.Height, NearPlane, FarPlane);
 
-        internal DeviceBuffer ProjectionBuffer;
-        internal DeviceBuffer ViewBuffer;
-        internal DeviceBuffer PositionBuffer;
+        return proj;
+    }
 
-        internal ResourceSet ResourceSet;
+    internal Matrix4x4 CalculateViewMatrix(ref Transform transform)
+    {
+        Matrix4x4 translation = default;
 
-        internal Matrix4x4 CalculateProjectionMatrix(ref Context context)
+        if (IsFollowingTarget)
         {
-            var proj = IsOrthographic
-                ? Matrix4x4.CreateOrthographic(Cone, Cone * context.Window.Size.Height / context.Window.Size.Width,
-                    NearPlane, FarPlane)
-                : Matrix4x4.CreatePerspectiveFieldOfView(FieldOfView,
-                    context.Window.Size.Width / (float) context.Window.Size.Height, NearPlane, FarPlane);
+            var forward = Vector3.Normalize(transform.Position - Target);
+            var right = Vector3.Cross(Vector3.Normalize(Vector3.UnitY), forward);
+            var up = Vector3.Cross(forward, right);
 
-            return proj;
+            translation = Matrix4x4.CreateLookAt(transform.Position, Target, up);
+        }
+        else
+        {
+            Matrix4x4.CreateTranslation(transform.Position);
         }
 
-        internal Matrix4x4 CalculateViewMatrix(ref Transform transform)
-        {
-            Matrix4x4 translation = default;
+        Zoom = MathF.Max(1f, MathF.Min(Zoom, 100));
+        var zoom = Matrix4x4.CreateScale(Zoom);
 
-            if (IsFollowingTarget)
-            {
-                var forward = Vector3.Normalize(transform.Position - Target);
-                var right = Vector3.Cross(Vector3.Normalize(Vector3.UnitY), forward);
-                var up = Vector3.Cross(forward, right);
+        //var rotation = Matrix4x4.CreateFromQuaternion(transform.Rotation);
 
-                translation = Matrix4x4.CreateLookAt(transform.Position, Target, up);
-            }
-            else
-            {
-                Matrix4x4.CreateTranslation(transform.Position);
-            }
+        return zoom * translation;
+    }
 
-            Zoom = MathF.Max(1f, MathF.Min(Zoom, 100));
-            var zoom = Matrix4x4.CreateScale(Zoom);
-
-            //var rotation = Matrix4x4.CreateFromQuaternion(transform.Rotation);
-
-            return zoom * translation;
-        }
-
-        public void Dispose()
-        {
-        }
+    public void Dispose()
+    {
     }
 }

@@ -7,26 +7,25 @@ using Trialogue.Systems.Rendering.Ui;
 using Trialogue.Window;
 using Veldrid;
 
-namespace Trialogue.Components
+namespace Trialogue.Components;
+
+public struct Light : IEcsComponent
 {
-    public struct Light : IEcsComponent
+    public LightType Type;
+
+    [Range(0f, 1000f)]
+    public float Strength;
+
+    [Color]
+    public Vector3 Color;
+
+    public void Dispose()
     {
-        public LightType Type;
+    }
 
-        [Range(0f, 1000f)]
-        public float Strength;
-
-        [Color]
-        public Vector3 Color;
-
-        public void Dispose()
-        {
-        }
-
-        public enum LightType {
-             Directional, 
-             Point, 
-             Spot 
-        }
+    public enum LightType {
+        Directional, 
+        Point, 
+        Spot 
     }
 }
